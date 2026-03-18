@@ -26,6 +26,7 @@ export default function App() {
   const [modal, setModal] = useState({ open: false, event: null, date: null, time: null })
   const { events } = useEventStore()
   const { isDark } = useDarkStore()
+  const [darkKey, setDarkKey] = useState(0)
 
   // Set initial dark mode on mount
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function App() {
   // Update dark mode when isDark changes
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
+    setDarkKey(k => k + 1)
   }, [isDark])
 
   const openAdd = (date = null, time = null) =>
@@ -70,7 +72,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-sidebar-deep font-sans">
+    <div key={darkKey} className={`flex h-screen w-screen overflow-hidden font-sans ${isDark ? 'bg-sidebar-deep' : 'bg-gray-100'}`}>
       <div className="flex-shrink-0">
         <Sidebar onAddEvent={() => openAdd()} />
       </div>

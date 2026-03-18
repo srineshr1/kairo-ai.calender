@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { useChatStore } from '../../store/useChatStore'
+import { useDarkStore } from '../../store/useDarkStore'
 import { useOllama } from './useOllama'
 
 function TypingDots() {
@@ -12,11 +13,11 @@ function TypingDots() {
   )
 }
 
-function ChatMessage({ msg }) {
+function ChatMessage({ msg, isDark }) {
   if (msg.role === 'system') {
     return (
-      <div className="py-3 border-b border-white/[0.05]">
-        <div className="text-center text-xs text-gray-500 leading-relaxed">
+      <div className={`py-3 border-b ${isDark ? 'border-white/[0.05]' : 'border-gray-200'}`}>
+        <div className={`text-center text-xs leading-relaxed ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
           {msg.text}
         </div>
       </div>
@@ -25,10 +26,10 @@ function ChatMessage({ msg }) {
   
   if (msg.role === 'user') {
     return (
-      <div className="py-3 border-b border-white/[0.05] animate-fadeUp">
+      <div className={`py-3 border-b animate-fadeUp ${isDark ? 'border-white/[0.05]' : 'border-gray-200'}`}>
             <div className="flex flex-col items-end">
           <div className="max-w-[85%] border-l-2 border-accent/40 pl-3">
-            <div className="text-[13px] text-gray-700 dark:text-gray-200 leading-relaxed font-sans">
+            <div className={`text-[13px] leading-relaxed font-sans ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
               {msg.text}
             </div>
           </div>
@@ -38,10 +39,10 @@ function ChatMessage({ msg }) {
   }
   
   return (
-    <div className="py-3 border-b border-white/[0.05] animate-fadeUp">
+    <div className={`py-3 border-b animate-fadeUp ${isDark ? 'border-white/[0.05]' : 'border-gray-200'}`}>
       <div className="flex flex-col">
         <div className="text-[9.5px] font-semibold text-accent uppercase tracking-widest mb-1.5">AI</div>
-        <div className="text-[13px] text-gray-700 dark:text-gray-200 leading-relaxed font-sans" style={{ whiteSpace: 'pre-wrap' }}>
+        <div className={`text-[13px] leading-relaxed font-sans ${isDark ? 'text-gray-200' : 'text-gray-700'}`} style={{ whiteSpace: 'pre-wrap' }}>
           {msg.text}
         </div>
       </div>
@@ -51,6 +52,7 @@ function ChatMessage({ msg }) {
 
 export default function ChatSidebar() {
   const { messages, isTyping, isOnline, model, setModel } = useChatStore()
+  const { isDark } = useDarkStore()
   const { send } = useOllama()
   const [input, setInput] = useState('')
   const [modelDraft, setModelDraft] = useState(model)
@@ -89,22 +91,26 @@ export default function ChatSidebar() {
     : 'bg-yellow-400'
 
   return (
-    <aside className="w-80 min-w-[320px] flex-shrink-0 bg-chat border-l border-white/[0.07] flex flex-col">
+    <aside className={`w-80 min-w-[320px] flex-shrink-0 border-l flex flex-col ${
+      isDark ? 'bg-chat border-white/[0.07]' : 'bg-white border-gray-200'
+    }`}>
       {/* Header */}
-      <div className="px-4 pt-7 pb-4 border-b border-white/[0.07] flex-shrink-0">
+      <div className={`px-4 pt-7 pb-4 border-b flex-shrink-0 ${isDark ? 'border-white/[0.07]' : 'border-gray-200'}`}>
         <div className="flex items-center gap-2 mb-4">
           <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineDot}`} />
-          <span className="font-display text-[22px] text-gray-100 tracking-tight">ai.assistant</span>
+          <span className={`font-display text-[22px] tracking-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>ai.assistant</span>
         </div>
         <div className="flex gap-2">
           <input
-            className="flex-1 bg-white/[0.07] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 font-mono outline-none focus:border-accent/50 transition-colors"
+            className={`flex-1 border rounded-lg px-3 py-1.5 text-xs font-mono outline-none focus:border-accent/50 transition-colors ${
+              isDark ? 'bg-white/[0.07] border-white/10 text-gray-200' : 'bg-gray-100 border-gray-200 text-gray-700'
+            }`}
             value={modelDraft}
             onChange={(e) => setModelDraft(e.target.value)}
             placeholder="model name…"
           />
           <button
-            className="bg-white hover:bg-white/90 transition-all text-gray-800 text-xs rounded-lg px-3.5 py-1.5 font-medium shadow-sm"
+            className="bg-accent hover:bg-accent/90 transition-all text-white text-xs rounded-lg px-3.5 py-1.5 font-medium shadow-sm"
             onClick={() => setModel(modelDraft)}
           >
             Apply
@@ -114,9 +120,9 @@ export default function ChatSidebar() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col">
-        {messages.map((m) => <ChatMessage key={m.id} msg={m} />)}
+        {messages.map((m) => <ChatMessage key={m.id} msg={m} isDark={isDark} />)}
         {isTyping && (
-          <div className="py-3 border-b border-white/[0.05] animate-fadeUp">
+          <div className={`py-3 border-b animate-fadeUp ${isDark ? 'border-white/[0.05]' : 'border-gray-200'}`}>
             <div className="text-[9.5px] font-semibold text-accent uppercase tracking-widest mb-1.5">AI</div>
             <TypingDots />
           </div>
@@ -126,10 +132,14 @@ export default function ChatSidebar() {
 
       {/* Input */}
       <div className="px-4 pb-4 pt-2 flex-shrink-0">
-        <div className="flex items-center gap-2 bg-white/[0.07] border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-accent/50 transition-colors">
+        <div className={`flex items-center gap-2 border rounded-lg px-3 py-1.5 focus-within:border-accent/50 transition-colors ${
+          isDark ? 'bg-white/[0.07] border-white/10' : 'bg-gray-100 border-gray-200'
+        }`}>
           <textarea
             ref={textareaRef}
-            className="flex-1 bg-transparent border-none outline-none text-[13px] text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 resize-none min-h-[20px] max-h-24 leading-relaxed font-sans"
+            className={`flex-1 bg-transparent border-none outline-none text-[13px] placeholder-gray-400 resize-none min-h-[20px] max-h-24 leading-relaxed font-sans ${
+              isDark ? 'text-gray-200' : 'text-gray-700'
+            }`}
             placeholder="Ask about your calendar…"
             value={input}
             onChange={handleTextarea}
@@ -137,14 +147,16 @@ export default function ChatSidebar() {
             rows={1}
           />
           <button
-            className="text-gray-400 hover:text-accent disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0 text-lg"
+            className={`hover:text-accent disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0 text-lg ${
+              isDark ? 'text-gray-400' : 'text-gray-500'
+            }`}
             onClick={handleSend}
             disabled={sending || !input.trim()}
           >
             ↑
           </button>
         </div>
-        <p className="text-[10.5px] text-gray-600 text-center mt-1.5">Enter to send · Shift+Enter for new line</p>
+        <p className={`text-[10.5px] text-center mt-1.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Enter to send · Shift+Enter for new line</p>
       </div>
     </aside>
   )
