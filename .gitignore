@@ -1,27 +1,20 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build artifacts
+dist/
+dist-ssr/
+out/
+build/
+*.zip
+
 # Logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
 # Environment variables
 .env
@@ -29,3 +22,22 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+*.local
+
+# WhatsApp Bridge Session & Sensitive Data
+.wwebjs_auth/
+.wwebjs_cache/
+events-queue.json
+.wwebjs_auth
+.wwebjs_cache
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

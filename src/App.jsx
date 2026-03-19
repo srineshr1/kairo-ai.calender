@@ -4,6 +4,8 @@ import TopBar from './components/Calendar/TopBar'
 import WeekView from './components/Calendar/WeekView'
 import ChatSidebar from './components/Chat/ChatSidebar'
 import EventModal from './components/Modal/EventModal'
+import WhatsAppToast from './components/WhatsAppToast'
+import { useWhatsAppSync } from './hooks/useWhatsAppSync'
 import { useEventStore } from './store/useEventStore'
 import { useDarkStore } from './store/useDarkStore'
 function PlaceholderView({ label }) {
@@ -27,6 +29,7 @@ export default function App() {
   const { events } = useEventStore()
   const { isDark } = useDarkStore()
   const [darkKey, setDarkKey] = useState(0)
+  const { newCount, lastMessage, clearCount } = useWhatsAppSync()
 
   // Set initial dark mode on mount
   useEffect(() => {
@@ -99,6 +102,8 @@ export default function App() {
         defaultDate={modal.date}
         defaultTime={modal.time}
       />
+
+      <WhatsAppToast count={newCount} message={lastMessage} onDismiss={clearCount} />
     </div>
   )
 }
