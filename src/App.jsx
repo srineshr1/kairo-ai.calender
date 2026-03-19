@@ -4,10 +4,12 @@ import TopBar from './components/Calendar/TopBar'
 import WeekView from './components/Calendar/WeekView'
 import ChatSidebar from './components/Chat/ChatSidebar'
 import EventModal from './components/Modal/EventModal'
+import WhatsAppSettings from './components/WhatsApp/WhatsAppSettings'
 import WhatsAppToast from './components/WhatsAppToast'
 import { useWhatsAppSync } from './hooks/useWhatsAppSync'
 import { useEventStore } from './store/useEventStore'
 import { useDarkStore } from './store/useDarkStore'
+
 function PlaceholderView({ label }) {
   return (
     <div className="flex-1 flex items-center justify-center bg-main text-gray-400 text-sm font-sans">
@@ -26,12 +28,12 @@ function PlaceholderView({ label }) {
 export default function App() {
   const [activeView, setActiveView] = useState('Week')
   const [modal, setModal] = useState({ open: false, event: null, date: null, time: null })
+  const [whatsappSettingsOpen, setWhatsappSettingsOpen] = useState(false)
   const { events } = useEventStore()
   const { isDark } = useDarkStore()
   const [darkKey, setDarkKey] = useState(0)
-  const { newCount, lastMessage, clearCount } = useWhatsAppSync()
+  const { lastSyncedEvents } = useWhatsAppSync()
 
-  // Set initial dark mode on mount
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark')
@@ -40,7 +42,6 @@ export default function App() {
     }
   }, [])
 
-  // Update dark mode when isDark changes
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
     setDarkKey(k => k + 1)
@@ -85,6 +86,7 @@ export default function App() {
           activeView={activeView}
           setActiveView={setActiveView}
           onAddEvent={() => openAdd()}
+          onWhatsAppSettings={() => setWhatsappSettingsOpen(true)}
         />
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden bg-main dark:bg-[#1a1a2e] flex flex-col">
           {renderView()}
@@ -103,7 +105,12 @@ export default function App() {
         defaultTime={modal.time}
       />
 
-      <WhatsAppToast count={newCount} message={lastMessage} onDismiss={clearCount} />
+      <WhatsAppSettings 
+        isOpen={whatsappSettingsOpen} 
+        onClose={() => setWhatsappSettingsOpen(false)} 
+      />
+
+      <WhatsAppToast events={lastSyncedEvents} />
     </div>
   )
 }

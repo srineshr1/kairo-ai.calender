@@ -1,16 +1,131 @@
 require('dotenv').config()
 const { Client, LocalAuth, MessageTypes } = require('whatsapp-web.js')
 const qrcode = require('qrcode-terminal')
+const fs = require('fs')
+const path = require('path')
+
 const { WATCHED_GROUPS, KEYWORDS, MIN_KEYWORD_MATCHES } = require('./config')
 const { analyzeText, analyzeImage, analyzePDF } = require('./analyzer')
 const { pushEvents } = require('./calendarPush')
 
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-console.log('  📅 my.calendar WhatsApp Bridge')
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-console.log('  Starting WhatsApp client...')
-console.log(`  Watching for groups matching: ${WATCHED_GROUPS.join(', ')}`)
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
+const QR_FILE = path.join(__dirname, 'public', 'qr.html')
+const QR_IMAGE_FILE = path.join(__dirname, 'public', 'qr.png')
+
+function log(msg, type = 'info') {
+  const colors = {
+    info: '\x1b[36m',
+    success: '\x1b[32m',
+    warning: '\x1b[33m',
+    error: '\x1b[31m',
+    reset: '\x1b[0m'
+  }
+  console.log(`${colors[type] || ''}${msg}${colors.reset}`)
+}
+
+function createQRHTML(qrData) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WhatsApp QR Code</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      max-width: 450px;
+      width: 90%;
+    }
+    h1 { font-size: 28px; margin-bottom: 10px; color: #25D366; }
+    .status { font-size: 14px; color: #aaa; margin-bottom: 30px; }
+    .qr-container {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+    }
+    .qr-container pre {
+      font-size: 6px;
+      line-height: 1;
+      color: #000;
+      overflow: hidden;
+    }
+    .instructions {
+      font-size: 14px;
+      color: #ccc;
+      margin-top: 20px;
+      line-height: 1.8;
+      text-align: left;
+    }
+    .instructions strong { color: #25D366; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .waiting { animation: pulse 2s infinite; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WhatsApp Bridge</h1>
+    <p class="status" id="status">Waiting for QR code...</p>
+    <div class="qr-container" id="qrContainer">
+      <pre id="qrCode">Loading...</pre>
+    </div>
+    <div class="instructions">
+      <p><strong>1.</strong> Open WhatsApp on your phone</p>
+      <p><strong>2.</strong> Tap ⋮ → Linked Devices → Link a Device</p>
+      <p><strong>3.</strong> Scan the QR code</p>
+    </div>
+  </div>
+  <script>
+    async function checkQR() {
+      try {
+        const res = await fetch('/qr-data')
+        const data = await res.text()
+        if (data && data !== 'waiting') {
+          document.getElementById('qrCode').textContent = data
+          document.getElementById('status').textContent = 'Scan this QR code!'
+          document.getElementById('status').className = ''
+        }
+        
+        const statusRes = await fetch('/status')
+        const status = await statusRes.json()
+        if (status.connected) {
+          document.getElementById('qrContainer').style.display = 'none'
+          document.getElementById('status').innerHTML = '<span style="font-size:40px">✅</span><br>WhatsApp Connected!'
+          document.getElementById('status').style.color = '#25D366'
+        }
+      } catch (e) {}
+    }
+    checkQR()
+    setInterval(checkQR, 2000)
+  </script>
+</body>
+</html>
+`
+}
+
+log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info')
+log('  📅 my.calendar WhatsApp Bridge', 'success')
+log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info')
+log('  Starting WhatsApp client...', 'info')
+log(`  Watching groups: ${WATCHED_GROUPS.join(', ') || 'None configured'}`, 'warning')
+log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'info')
+
+let qrData = null
+let isReady = false
 
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'my-calendar-bridge' }),
@@ -20,42 +135,48 @@ const client = new Client({
   },
 })
 
-// ── QR Code ──
 client.on('qr', (qr) => {
-  console.log('\n  Scan this QR code with WhatsApp:\n')
+  qrData = qr
+  log('\n  ╔═══════════════════════════════════════╗', 'warning')
+  log('  ║         QR CODE READY                ║', 'warning')
+  log('  ╚═══════════════════════════════════════╝', 'warning')
+  log('\n  🌐 Open http://localhost:3001 in browser', 'info')
+  log('  📱 Scan with WhatsApp app\n', 'info')
+  
+  console.log(qr)
   qrcode.generate(qr, { small: true })
-  console.log('\n  Waiting for scan...\n')
+  console.log()
 })
 
-// ── Ready ──
+client.on('authenticated', () => {
+  log('  ✅ WhatsApp authenticated!', 'success')
+})
+
 client.on('ready', () => {
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('  ✅ WhatsApp connected!')
-  console.log('  📡 Listening for college group messages...')
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
+  isReady = true
+  qrData = null
+  log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'success')
+  log('  ✅ WhatsApp connected!', 'success')
+  log('  📡 Listening for messages...', 'info')
+  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'success')
 })
 
-// ── Auth failure ──
 client.on('auth_failure', (msg) => {
-  console.error('  ✗ Auth failed:', msg)
+  log(`\n  ❌ Auth failed: ${msg}`, 'error')
   process.exit(1)
 })
 
-// ── Disconnected ──
 client.on('disconnected', (reason) => {
-  console.log('  ⚠ Disconnected:', reason)
-  console.log('  Attempting reconnect...')
-  client.initialize()
+  log(`\n  ⚠ Disconnected: ${reason}`, 'warning')
+  log('  Attempting reconnect...', 'info')
 })
 
-// ── Check if group is watched ──
 function isWatchedGroup(chatName) {
   if (!chatName) return false
   const name = chatName.toLowerCase()
   return WATCHED_GROUPS.some(g => name.includes(g.toLowerCase()))
 }
 
-// ── Check if message is relevant ──
 function isRelevantMessage(text) {
   if (!text) return false
   const lower = text.toLowerCase()
@@ -63,94 +184,81 @@ function isRelevantMessage(text) {
   return matches.length >= MIN_KEYWORD_MATCHES
 }
 
-// ── Main message handler ──
 client.on('message', async (msg) => {
   try {
     const chat = await msg.getChat()
 
-    // Only process group messages
     if (!chat.isGroup) return
 
     const groupName = chat.name || ''
 
-    // Only process watched groups
     if (!isWatchedGroup(groupName)) return
 
     const timestamp = new Date().toLocaleTimeString()
-    console.log(`\n[${timestamp}] 📨 Message from: "${groupName}"`)
-    console.log(`  Type: ${msg.type}`)
+    log(`\n[${timestamp}] 📨 "${groupName}"`, 'info')
+    log(`  Type: ${msg.type}`, 'info')
 
     let events = []
 
-    // ── Handle text messages ──
     if (msg.type === 'chat' || msg.type === MessageTypes.TEXT) {
       const text = msg.body || ''
-      console.log(`  Text: "${text.slice(0, 80)}${text.length > 80 ? '...' : ''}"`)
+      log(`  Text: "${text.slice(0, 60)}${text.length > 60 ? '...' : ''}"`, 'info')
 
       if (!isRelevantMessage(text)) {
-        console.log('  → Not relevant, skipping')
+        log('  ⏭️  Not relevant, skipping', 'warning')
         return
       }
 
-      console.log('  → Relevant! Sending to Ollama...')
+      log('  🔍 Relevant! Sending to Ollama...', 'info')
       events = await analyzeText(text, groupName)
     }
 
-    // ── Handle images ──
     else if (msg.type === MessageTypes.IMAGE || msg.type === 'image') {
-      console.log('  → Image received, downloading...')
+      log('  🖼️  Image received, downloading...', 'info')
       const media = await msg.downloadMedia()
-      if (!media) { console.log('  → Could not download image'); return }
+      if (!media) { log('  ❌ Could not download image', 'error'); return }
 
       const base64 = media.data
       const mimeType = media.mimetype || 'image/jpeg'
-      console.log(`  → Downloaded (${mimeType}), analyzing...`)
+      log(`  📊 Analyzing image (${mimeType})...`, 'info')
       events = await analyzeImage(base64, mimeType, groupName)
     }
 
-    // ── Handle PDFs / documents ──
-    else if (
-      msg.type === MessageTypes.DOCUMENT ||
-      msg.type === 'document' ||
-      (msg.type === MessageTypes.AUDIO && msg.mimetype?.includes('pdf'))
-    ) {
+    else if (msg.type === MessageTypes.DOCUMENT || msg.type === 'document') {
       const media = await msg.downloadMedia()
-      if (!media) { console.log('  → Could not download document'); return }
+      if (!media) { log('  ❌ Could not download document', 'error'); return }
 
       if (media.mimetype?.includes('pdf') || media.filename?.endsWith('.pdf')) {
-        console.log('  → PDF received, extracting text...')
+        log('  📄 PDF received, extracting...', 'info')
         const buffer = Buffer.from(media.data, 'base64')
         events = await analyzePDF(buffer, groupName)
       } else {
-        console.log(`  → Document type ${media.mimetype} not supported`)
+        log(`  ⏭️  Document type not supported: ${media.mimetype}`, 'warning')
         return
       }
     }
 
     else {
-      console.log(`  → Message type "${msg.type}" not handled`)
+      log(`  ⏭️  Message type not handled: ${msg.type}`, 'warning')
       return
     }
 
-    // ── Push to calendar ──
     if (events.length > 0) {
-      console.log(`  ✅ Extracted ${events.length} event(s)!`)
+      log(`  ✅ Extracted ${events.length} event(s)!`, 'success')
       await pushEvents(events)
     } else {
-      console.log('  → No events extracted from this message')
+      log('  ℹ️  No events extracted', 'info')
     }
 
   } catch (err) {
-    console.error('  ✗ Error processing message:', err.message)
+    log(`  ❌ Error: ${err.message}`, 'error')
   }
 })
 
-// ── Start ──
 client.initialize()
 
-// ── Graceful shutdown ──
 process.on('SIGINT', async () => {
-  console.log('\n\n  Shutting down...')
+  log('\n\n  Shutting down...', 'warning')
   await client.destroy()
   process.exit(0)
 })
