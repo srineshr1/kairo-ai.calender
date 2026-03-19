@@ -7,6 +7,7 @@ const app = express()
 const PORT = process.env.BRIDGE_PORT || 3001
 
 const QUEUE_FILE = path.join(__dirname, 'public', 'events-queue.json')
+const STATUS_FILE = path.join(__dirname, 'public', 'bridge-status.json')
 
 if (!fs.existsSync(path.join(__dirname, 'public'))) {
   fs.mkdirSync(path.join(__dirname, 'public'))
@@ -14,24 +15,29 @@ if (!fs.existsSync(path.join(__dirname, 'public'))) {
 if (!fs.existsSync(QUEUE_FILE)) {
   fs.writeFileSync(QUEUE_FILE, '[]')
 }
+if (!fs.existsSync(STATUS_FILE)) {
+  fs.writeFileSync(STATUS_FILE, JSON.stringify({ connected: false, qr: null }))
+}
 
 app.use(cors())
 app.use(express.json())
 
-let qrData = null
-let isConnected = false
-
-app.post('/qr-data', (req, res) => {
-  qrData = req.body.qr || null
-  res.json({ success: true })
-})
-
 app.get('/qr-data', (req, res) => {
-  res.type('text/plain').send(qrData || 'waiting')
+  try {
+    const status = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'))
+    res.type('text/plain').send(status.qr || 'waiting')
+  } catch {
+    res.type('text/plain').send('waiting')
+  }
 })
 
 app.get('/status', (req, res) => {
-  res.json({ connected: isConnected })
+  try {
+    const status = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'))
+    res.json(status)
+  } catch {
+    res.json({ connected: false })
+  }
 })
 
 app.post('/events', (req, res) => {
@@ -127,15 +133,15 @@ app.get('/', (req, res) => {
 <body>
   <div class="container">
     <h1>WhatsApp Bridge</h1>
-    <p class="subtitle" id="status">Waiting for QR code...</p>
+    <p class="subtitle" id="status">Waiting for WhatsApp bridge...</p>
     <div class="qr-container" id="qrContainer">
-      <pre id="qrCode">Waiting for bridge server to generate QR...</pre>
+      <pre id="qrCode">Waiting for WhatsApp bridge to start...</pre>
       <p class="countdown" id="countdown"></p>
     </div>
     <div class="instructions">
-      <p><strong>1.</strong> Open WhatsApp on your phone</p>
-      <p><strong>2.</strong> Tap ⋮ → Linked Devices → Link a Device</p>
-      <p><strong>3.</strong> Scan the QR code above</p>
+      <p><strong>1.</strong> Start the WhatsApp bridge (node index.js)</p>
+      <p><strong>2.</strong> Scan QR code with WhatsApp app</p>
+      <p><strong>3.</strong> Bridge auto-connects on restart!</p>
     </div>
   </div>
 
@@ -147,26 +153,24 @@ app.get('/', (req, res) => {
     
     async function check() {
       try {
-        const res = await fetch('/qr-data')
-        const data = await res.text()
+        const res = await fetch('/status')
+        const status = await res.json()
         
-        if (data && data !== 'waiting') {
-          qrEl.textContent = data
-          statusEl.textContent = '✅ Scan this QR with WhatsApp!'
-          statusEl.className = ''
-          countdown = 60
-        } else {
-          qrEl.textContent = 'Waiting for QR...'
-          statusEl.textContent = 'Waiting for QR code...'
-          statusEl.className = 'waiting'
-        }
-        
-        const statusRes = await fetch('/status')
-        const status = await statusRes.json()
         if (status.connected) {
           document.getElementById('qrContainer').style.display = 'none'
           statusEl.innerHTML = '<span style="font-size:40px">✅</span><br>WhatsApp Connected!'
           statusEl.style.color = '#25D366'
+        } else if (status.qr && status.qr !== 'waiting') {
+          qrEl.textContent = status.qr
+          statusEl.textContent = '✅ Scan this QR with WhatsApp!'
+          statusEl.className = ''
+          statusEl.style.color = '#aaa'
+          countdown = 60
+        } else {
+          qrEl.textContent = 'Waiting for QR...'
+          statusEl.textContent = 'Starting WhatsApp bridge...'
+          statusEl.className = 'waiting'
+          statusEl.style.color = '#aaa'
         }
       } catch (e) {
         qrEl.textContent = 'Error connecting...'
@@ -192,6 +196,7 @@ app.listen(PORT, () => {
   console.log('  📡 WhatsApp Bridge Server')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log(`  🌐 Open http://localhost:${PORT} to scan QR`)
+  console.log('  📁 Events queue: public/events-queue.json')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('')
 })

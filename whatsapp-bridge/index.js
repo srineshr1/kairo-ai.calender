@@ -8,8 +8,22 @@ const { WATCHED_GROUPS, KEYWORDS, MIN_KEYWORD_MATCHES } = require('./config')
 const { analyzeText, analyzeImage, analyzePDF } = require('./analyzer')
 const { pushEvents } = require('./calendarPush')
 
-const QR_FILE = path.join(__dirname, 'public', 'qr.html')
-const QR_IMAGE_FILE = path.join(__dirname, 'public', 'qr.png')
+const MAX_RECONNECT_ATTEMPTS = 15
+const RECONNECT_DELAY = 5000
+const STATUS_FILE = path.join(__dirname, 'public', 'bridge-status.json')
+
+let reconnectAttempts = 0
+let qrData = null
+let isReady = false
+let client = null
+
+function updateStatus(status) {
+  try {
+    fs.writeFileSync(STATUS_FILE, JSON.stringify(status, null, 2))
+  } catch (err) {
+    console.error('Failed to update status:', err.message)
+  }
+}
 
 function log(msg, type = 'info') {
   const colors = {
@@ -19,157 +33,165 @@ function log(msg, type = 'info') {
     error: '\x1b[31m',
     reset: '\x1b[0m'
   }
-  console.log(`${colors[type] || ''}${msg}${colors.reset}`)
-}
-
-function createQRHTML(qrData) {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>WhatsApp QR Code</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-    }
-    .container {
-      text-align: center;
-      padding: 40px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 20px;
-      backdrop-filter: blur(10px);
-      max-width: 450px;
-      width: 90%;
-    }
-    h1 { font-size: 28px; margin-bottom: 10px; color: #25D366; }
-    .status { font-size: 14px; color: #aaa; margin-bottom: 30px; }
-    .qr-container {
-      background: white;
-      padding: 20px;
-      border-radius: 15px;
-      margin-bottom: 20px;
-    }
-    .qr-container pre {
-      font-size: 6px;
-      line-height: 1;
-      color: #000;
-      overflow: hidden;
-    }
-    .instructions {
-      font-size: 14px;
-      color: #ccc;
-      margin-top: 20px;
-      line-height: 1.8;
-      text-align: left;
-    }
-    .instructions strong { color: #25D366; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .waiting { animation: pulse 2s infinite; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>WhatsApp Bridge</h1>
-    <p class="status" id="status">Waiting for QR code...</p>
-    <div class="qr-container" id="qrContainer">
-      <pre id="qrCode">Loading...</pre>
-    </div>
-    <div class="instructions">
-      <p><strong>1.</strong> Open WhatsApp on your phone</p>
-      <p><strong>2.</strong> Tap ⋮ → Linked Devices → Link a Device</p>
-      <p><strong>3.</strong> Scan the QR code</p>
-    </div>
-  </div>
-  <script>
-    async function checkQR() {
-      try {
-        const res = await fetch('/qr-data')
-        const data = await res.text()
-        if (data && data !== 'waiting') {
-          document.getElementById('qrCode').textContent = data
-          document.getElementById('status').textContent = 'Scan this QR code!'
-          document.getElementById('status').className = ''
-        }
-        
-        const statusRes = await fetch('/status')
-        const status = await statusRes.json()
-        if (status.connected) {
-          document.getElementById('qrContainer').style.display = 'none'
-          document.getElementById('status').innerHTML = '<span style="font-size:40px">✅</span><br>WhatsApp Connected!'
-          document.getElementById('status').style.color = '#25D366'
-        }
-      } catch (e) {}
-    }
-    checkQR()
-    setInterval(checkQR, 2000)
-  </script>
-</body>
-</html>
-`
+  const timestamp = new Date().toLocaleTimeString()
+  console.log(`[\x1b[90m${timestamp}\x1b[0m] ${colors[type] || ''}${msg}${colors.reset}`)
 }
 
 log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info')
 log('  📅 my.calendar WhatsApp Bridge', 'success')
 log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info')
-log('  Starting WhatsApp client...', 'info')
+log('  Session will be saved to .wwebjs_auth/', 'info')
+log('  Scan QR once, never again!', 'success')
 log(`  Watching groups: ${WATCHED_GROUPS.join(', ') || 'None configured'}`, 'warning')
 log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'info')
 
-let qrData = null
-let isReady = false
+function createClient() {
+  const whatsappClient = new Client({
+    authStrategy: new LocalAuth({
+      clientId: "mycalendar-bridge",
+      dataPath: "./.wwebjs_auth"
+    }),
+    puppeteer: {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    }
+  })
 
-const client = new Client({
-  authStrategy: new LocalAuth({ clientId: 'my-calendar-bridge' }),
-  puppeteer: {
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  },
-})
+  whatsappClient.on('qr', (qr) => {
+    qrData = qr
+    reconnectAttempts = 0
+    updateStatus({ connected: false, qr: qr })
+    log('\n  ╔═══════════════════════════════════════╗', 'warning')
+    log('  ║         QR CODE READY                  ║', 'warning')
+    log('  ╚═══════════════════════════════════════╝', 'warning')
+    log('\n  🌐 Open http://localhost:3001 in browser', 'info')
+    log('  📱 Scan with WhatsApp app\n', 'info')
+    
+    console.log(qr)
+    qrcode.generate(qr, { small: true })
+    console.log()
+  })
 
-client.on('qr', (qr) => {
-  qrData = qr
-  log('\n  ╔═══════════════════════════════════════╗', 'warning')
-  log('  ║         QR CODE READY                ║', 'warning')
-  log('  ╚═══════════════════════════════════════╝', 'warning')
-  log('\n  🌐 Open http://localhost:3001 in browser', 'info')
-  log('  📱 Scan with WhatsApp app\n', 'info')
-  
-  console.log(qr)
-  qrcode.generate(qr, { small: true })
-  console.log()
-})
+  whatsappClient.on('authenticated', () => {
+    qrData = null
+    reconnectAttempts = 0
+    updateStatus({ connected: false, qr: null, message: 'Authenticated, connecting...' })
+    log('  ✅ Session authenticated and saved!', 'success')
+  })
 
-client.on('authenticated', () => {
-  log('  ✅ WhatsApp authenticated!', 'success')
-})
+  whatsappClient.on('ready', () => {
+    isReady = true
+    qrData = null
+    reconnectAttempts = 0
+    updateStatus({ connected: true, qr: null, message: 'Connected!' })
+    log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'success')
+    log('  ✅ WhatsApp connected!', 'success')
+    log('  ✅ Session restored (no QR needed)', 'success')
+    log('  📡 Listening for messages...', 'info')
+    log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'success')
+  })
 
-client.on('ready', () => {
-  isReady = true
-  qrData = null
-  log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'success')
-  log('  ✅ WhatsApp connected!', 'success')
-  log('  📡 Listening for messages...', 'info')
-  log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'success')
-})
+  whatsappClient.on('auth_failure', (msg) => {
+    updateStatus({ connected: false, qr: null, message: 'Auth failed' })
+    log(`\n  ❌ Auth failed: ${msg}`, 'error')
+    log('  Will retry...', 'warning')
+  })
 
-client.on('auth_failure', (msg) => {
-  log(`\n  ❌ Auth failed: ${msg}`, 'error')
-  process.exit(1)
-})
+  whatsappClient.on('disconnected', (reason) => {
+    isReady = false
+    updateStatus({ connected: false, qr: null, message: 'Disconnected' })
+    log(`\n  ⚠️  Disconnected: ${reason}`, 'warning')
+    
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      log(`  ❌ Max reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached`, 'error')
+      log('  Please restart the bridge manually', 'error')
+      process.exit(1)
+    }
+    
+    reconnectAttempts++
+    log(`  🔄 Reconnecting in ${RECONNECT_DELAY/1000}s... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`, 'warning')
+    
+    setTimeout(() => {
+      log('  🔄 Attempting to reconnect...', 'info')
+      whatsappClient.initialize().catch(err => {
+        log(`  ❌ Reconnection error: ${err.message}`, 'error')
+      })
+    }, RECONNECT_DELAY)
+  })
 
-client.on('disconnected', (reason) => {
-  log(`\n  ⚠ Disconnected: ${reason}`, 'warning')
-  log('  Attempting reconnect...', 'info')
-})
+  whatsappClient.on('message', async (msg) => {
+    try {
+      const chat = await msg.getChat()
+
+      if (!chat.isGroup) return
+
+      const groupName = chat.name || ''
+
+      if (!isWatchedGroup(groupName)) return
+
+      const timestamp = new Date().toLocaleTimeString()
+      log(`\n[${timestamp}] 📨 "${groupName}"`, 'info')
+      log(`  Type: ${msg.type}`, 'info')
+
+      let events = []
+
+      if (msg.type === 'chat' || msg.type === MessageTypes.TEXT) {
+        const text = msg.body || ''
+        log(`  Text: "${text.slice(0, 60)}${text.length > 60 ? '...' : ''}"`, 'info')
+
+        if (!isRelevantMessage(text)) {
+          log('  ⏭️  Not relevant, skipping', 'warning')
+          return
+        }
+
+        log('  🔍 Relevant! Sending to Ollama...', 'info')
+        events = await analyzeText(text, groupName)
+      }
+
+      else if (msg.type === MessageTypes.IMAGE || msg.type === 'image') {
+        log('  🖼️  Image received, downloading...', 'info')
+        const media = await msg.downloadMedia()
+        if (!media) { log('  ❌ Could not download image', 'error'); return }
+
+        const base64 = media.data
+        const mimeType = media.mimetype || 'image/jpeg'
+        log(`  📊 Analyzing image (${mimeType})...`, 'info')
+        events = await analyzeImage(base64, mimeType, groupName)
+      }
+
+      else if (msg.type === MessageTypes.DOCUMENT || msg.type === 'document') {
+        const media = await msg.downloadMedia()
+        if (!media) { log('  ❌ Could not download document', 'error'); return }
+
+        if (media.mimetype?.includes('pdf') || media.filename?.endsWith('.pdf')) {
+          log('  📄 PDF received, extracting...', 'info')
+          const buffer = Buffer.from(media.data, 'base64')
+          events = await analyzePDF(buffer, groupName)
+        } else {
+          log(`  ⏭️  Document type not supported: ${media.mimetype}`, 'warning')
+          return
+        }
+      }
+
+      else {
+        log(`  ⏭️  Message type not handled: ${msg.type}`, 'warning')
+        return
+      }
+
+      if (events.length > 0) {
+        log(`  ✅ Extracted ${events.length} event(s)!`, 'success')
+        await pushEvents(events)
+      } else {
+        log('  ℹ️  No events extracted', 'info')
+      }
+
+    } catch (err) {
+      log(`  ❌ Error: ${err.message}`, 'error')
+    }
+  })
+
+  return whatsappClient
+}
 
 function isWatchedGroup(chatName) {
   if (!chatName) return false
@@ -184,81 +206,22 @@ function isRelevantMessage(text) {
   return matches.length >= MIN_KEYWORD_MATCHES
 }
 
-client.on('message', async (msg) => {
-  try {
-    const chat = await msg.getChat()
+client = createClient()
 
-    if (!chat.isGroup) return
-
-    const groupName = chat.name || ''
-
-    if (!isWatchedGroup(groupName)) return
-
-    const timestamp = new Date().toLocaleTimeString()
-    log(`\n[${timestamp}] 📨 "${groupName}"`, 'info')
-    log(`  Type: ${msg.type}`, 'info')
-
-    let events = []
-
-    if (msg.type === 'chat' || msg.type === MessageTypes.TEXT) {
-      const text = msg.body || ''
-      log(`  Text: "${text.slice(0, 60)}${text.length > 60 ? '...' : ''}"`, 'info')
-
-      if (!isRelevantMessage(text)) {
-        log('  ⏭️  Not relevant, skipping', 'warning')
-        return
-      }
-
-      log('  🔍 Relevant! Sending to Ollama...', 'info')
-      events = await analyzeText(text, groupName)
-    }
-
-    else if (msg.type === MessageTypes.IMAGE || msg.type === 'image') {
-      log('  🖼️  Image received, downloading...', 'info')
-      const media = await msg.downloadMedia()
-      if (!media) { log('  ❌ Could not download image', 'error'); return }
-
-      const base64 = media.data
-      const mimeType = media.mimetype || 'image/jpeg'
-      log(`  📊 Analyzing image (${mimeType})...`, 'info')
-      events = await analyzeImage(base64, mimeType, groupName)
-    }
-
-    else if (msg.type === MessageTypes.DOCUMENT || msg.type === 'document') {
-      const media = await msg.downloadMedia()
-      if (!media) { log('  ❌ Could not download document', 'error'); return }
-
-      if (media.mimetype?.includes('pdf') || media.filename?.endsWith('.pdf')) {
-        log('  📄 PDF received, extracting...', 'info')
-        const buffer = Buffer.from(media.data, 'base64')
-        events = await analyzePDF(buffer, groupName)
-      } else {
-        log(`  ⏭️  Document type not supported: ${media.mimetype}`, 'warning')
-        return
-      }
-    }
-
-    else {
-      log(`  ⏭️  Message type not handled: ${msg.type}`, 'warning')
-      return
-    }
-
-    if (events.length > 0) {
-      log(`  ✅ Extracted ${events.length} event(s)!`, 'success')
-      await pushEvents(events)
-    } else {
-      log('  ℹ️  No events extracted', 'info')
-    }
-
-  } catch (err) {
-    log(`  ❌ Error: ${err.message}`, 'error')
-  }
+client.initialize().catch(err => {
+  log(`\n  ❌ Failed to start WhatsApp client: ${err.message}`, 'error')
+  log('  Please check your internet connection and try again.', 'error')
+  process.exit(1)
 })
-
-client.initialize()
 
 process.on('SIGINT', async () => {
   log('\n\n  Shutting down...', 'warning')
-  await client.destroy()
+  if (client) {
+    await client.destroy()
+  }
   process.exit(0)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  log(`  ⚠️  Unhandled rejection: ${reason}`, 'warning')
 })
