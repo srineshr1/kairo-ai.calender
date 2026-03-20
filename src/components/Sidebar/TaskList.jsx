@@ -38,7 +38,7 @@ export default function TaskList({ onAdd }) {
           <div
             key={ev.id}
             className={`flex items-start gap-2 px-1 py-1.5 rounded-lg transition-colors cursor-pointer group select-none ${
-              isDark ? 'hover:bg-white/5' : 'hover:bg-gray-200/50'
+              isDark ? 'hover:bg-white/5' : 'hover:bg-[#e0dcd6]'
             }`}
             onClick={() => handleClick(ev.id)}
             title="Double-click to mark done"

@@ -1,7 +1,9 @@
 const express = require('express')
 const cors = require('cors')
+const rateLimit = require('express-rate-limit')
 const fs = require('fs')
 const path = require('path')
+require('dotenv').config()
 
 const app = express()
 const PORT = process.env.BRIDGE_PORT || 3001
@@ -19,8 +21,56 @@ if (!fs.existsSync(STATUS_FILE)) {
   fs.writeFileSync(STATUS_FILE, JSON.stringify({ connected: false, qr: null }))
 }
 
-app.use(cors())
-app.use(express.json())
+// CORS Configuration
+const allowedOrigins = [
+  process.env.CALENDAR_URL || 'http://localhost:5173',
+  'http://localhost:5174', // Alternative dev port
+  'http://localhost:5175', // Alternative dev port
+]
+
+// Add custom allowed origins from .env if specified
+if (process.env.ALLOWED_ORIGINS) {
+  const customOrigins = process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  allowedOrigins.push(...customOrigins)
+}
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`)
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+}
+
+// Rate Limiting Configuration
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { error: 'Too many requests from this IP, please try again later.' },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+})
+
+// Stricter rate limit for POST /events (prevent spam)
+const eventsPostLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // Limit each IP to 10 POST requests per minute
+  message: { error: 'Too many events posted, please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+app.use(cors(corsOptions))
+app.use(express.json({ limit: '10mb' })) // Add payload size limit
+app.use(limiter) // Apply rate limiting to all requests
 
 app.get('/qr-data', (req, res) => {
   try {
@@ -40,24 +90,45 @@ app.get('/status', (req, res) => {
   }
 })
 
-app.post('/events', (req, res) => {
+app.post('/events', eventsPostLimiter, (req, res) => {
   try {
     const { events } = req.body
     if (!events || !Array.isArray(events)) {
       return res.status(400).json({ error: 'events array required' })
     }
 
+    // Validate and sanitize each event
+    const validEvents = events.filter(e => {
+      if (!e || typeof e !== 'object') return false
+      if (!e.title || typeof e.title !== 'string' || e.title.length > 200) return false
+      if (!e.date || typeof e.date !== 'string') return false
+      return true
+    }).map(e => ({
+      // Sanitize by only keeping allowed fields
+      id: e.id || Date.now().toString(),
+      title: e.title.substring(0, 200), // Truncate long titles
+      date: e.date,
+      time: e.time || '09:00',
+      duration: Math.min(Math.max(parseInt(e.duration) || 60, 15), 1440), // 15min to 24h
+      group: e.group?.substring(0, 100) || 'WhatsApp',
+      color: ['pink', 'green', 'blue', 'amber', 'gray'].includes(e.color) ? e.color : 'blue'
+    }))
+
+    if (validEvents.length === 0) {
+      return res.status(400).json({ error: 'No valid events provided' })
+    }
+
     const existing = JSON.parse(fs.readFileSync(QUEUE_FILE, 'utf8') || '[]')
-    const updated = [...existing, ...events]
+    const updated = [...existing, ...validEvents]
     fs.writeFileSync(QUEUE_FILE, JSON.stringify(updated, null, 2))
 
-    console.log(`[${new Date().toLocaleTimeString()}] ✅ Queued ${events.length} event(s)`)
-    events.forEach(e => console.log(`  → ${e.title} on ${e.date}`))
+    console.log(`[${new Date().toLocaleTimeString()}] ✅ Queued ${validEvents.length} event(s)`)
+    validEvents.forEach(e => console.log(`  → ${e.title} on ${e.date}`))
 
-    res.json({ success: true, queued: events.length })
+    res.json({ success: true, queued: validEvents.length })
   } catch (err) {
     console.error('Error queuing events:', err.message)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: 'Internal server error' })
   }
 })
 

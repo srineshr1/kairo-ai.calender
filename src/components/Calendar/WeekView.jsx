@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor,
-  useSensor, useSensors, rectIntersection,
+  useSensor, useSensors, closestCenter,
+  defaultDropAnimationSideEffects,
 } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 import { restrictToWindowEdges } from '@dnd-kit/modifiers'
 import { format } from 'date-fns'
 import { useEventStore } from '../../store/useEventStore'
+import { useDarkStore } from '../../store/useDarkStore'
 import {
   getWorkWeekDays, fmtDate, isToday, expandRecurring,
   timeToMinutes, minutesToTime, snapTo15,
@@ -23,6 +26,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
     searchQuery, reschedule,
     awakeStart, awakeEnd, setAwakeStart, setAwakeEnd,
   } = useEventStore()
+  const { isDark } = useDarkStore()
 
   const days = getWorkWeekDays(currentWeekStart)
   const [draggingEv, setDraggingEv] = useState(null)
@@ -144,7 +148,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
       <div className="flex-1 overflow-y-auto light-scroll overflow-x-hidden min-w-0">
         <DndContext
           sensors={sensors}
-          collisionDetection={rectIntersection}
+          collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           modifiers={[restrictToWindowEdges]}
@@ -152,8 +156,12 @@ export default function WeekView({ onEventClick, onSlotClick }) {
           <div key={animKey} className={slideClass} style={{ willChange: 'transform, opacity' }}>
             {/* Week header */}
             <div
-              className="grid sticky top-0 z-20 bg-white dark:bg-[#1f1d30] border-b border-black/[0.06] dark:border-white/10"
-              style={{ gridTemplateColumns: '56px repeat(5, 1fr)' }}
+              className="grid sticky top-0 z-20 dark:bg-[#1f1d30] border-b border-black/[0.06] dark:border-white/10"
+              style={{ 
+                gridTemplateColumns: '56px repeat(5, 1fr)',
+                backgroundColor: isDark ? undefined : '#faf9f7',
+                boxShadow: isDark ? undefined : '0 1px 0 rgba(0,0,0,0.06)'
+              }}
             >
               <div className="px-2 py-3" />
               {days.map((d) => {
@@ -179,7 +187,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
             {/* Body */}
             <div className="grid" style={{ gridTemplateColumns: '56px repeat(5, 1fr)' }}>
               {/* Time gutter — full 24hr */}
-              <div>
+              <div style={{ backgroundColor: isDark ? undefined : '#f5f3f0' }}>
                 {HOURS.map((h) => (
                   <div key={h} className="relative" style={{ height: PX_PER_HOUR }}>
                     <span className={`absolute -top-2 right-2 text-[11px] tabular-nums ${
@@ -211,12 +219,46 @@ export default function WeekView({ onEventClick, onSlotClick }) {
             </div>
           </div>
 
-          <DragOverlay>
-            {draggingEv && (
-              <div className="bg-accent/20 border-2 border-accent border-dashed rounded-lg px-2 py-1.5 w-32 opacity-80">
-                <p className="text-[12px] font-medium text-accent truncate">{draggingEv.title}</p>
-              </div>
-            )}
+          <DragOverlay dropAnimation={null}>
+            {draggingEv && (() => {
+              const COLOR_MAP = {
+                pink:  { bg: 'bg-event-pink dark:bg-[#3d2040]',  border: '#c060d0', text: '#4a1259', darkText: '#f5d8f8' },
+                green: { bg: 'bg-event-green dark:bg-[#1a3d28]', border: '#2a9e5a', text: '#0d4a22', darkText: '#c8f0d8' },
+                blue:  { bg: 'bg-event-blue dark:bg-[#1a2d4a]',  border: '#3070c8', text: '#082d5e', darkText: '#c8dcf5' },
+                amber: { bg: 'bg-event-amber dark:bg-[#3d2e10]', border: '#c87820', text: '#522c05', darkText: '#f5e8c0' },
+                gray:  { bg: 'bg-event-gray dark:bg-[#2a2a2a]',  border: '#888888', text: '#222222', darkText: '#e0e0e0' },
+              }
+              const colorScheme = COLOR_MAP[draggingEv.color] || COLOR_MAP.gray
+              const isDark = document.documentElement.classList.contains('dark')
+              const titleColor = isDark ? colorScheme.darkText : colorScheme.text
+              
+              return (
+                <div 
+                  className={`rounded-lg px-2 py-1.5 overflow-hidden select-none ${colorScheme.bg}`}
+                  style={{
+                    transform: 'rotate(-2deg) scale(1.05)',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.4), 0 10px 20px rgba(0,0,0,0.25)',
+                    borderRadius: '8px',
+                    width: '120px',
+                    borderLeft: `4px solid ${colorScheme.border}`,
+                    cursor: 'grabbing',
+                    willChange: 'transform, box-shadow',
+                  }}
+                >
+                  <div className="relative">
+                    <p 
+                      className={`text-[13px] font-semibold leading-tight ${draggingEv.done ? 'line-through opacity-50' : ''}`}
+                      style={{ color: titleColor }}
+                    >
+                      {draggingEv.title}
+                    </p>
+                    {draggingEv.sub && (
+                      <p className="text-[11px] mt-0.5 truncate text-gray-600 dark:text-gray-400">{draggingEv.sub}</p>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
           </DragOverlay>
         </DndContext>
       </div>

@@ -23,7 +23,9 @@ export default function DayColumn({ date, events, searchQuery, onEventClick, onS
   return (
     <div
       ref={setNodeRef}
-      className={`border-l border-black/[0.06] dark:border-white/[0.06] relative ${isOver ? 'bg-accent/5' : ''} transition-colors`}
+      className={`border-l border-black/[0.06] dark:border-white/[0.06] relative ${
+        isOver ? 'bg-blue-500/10 dark:bg-blue-400/15' : ''
+      } transition-all duration-200`}
       style={{ height: TOTAL_HOURS * PX_PER_HOUR }}
       onDoubleClick={(e) => {
         if (e.target.closest('.event-block')) return
@@ -51,7 +53,7 @@ export default function DayColumn({ date, events, searchQuery, onEventClick, onS
           className="absolute left-0 right-0 top-0 pointer-events-none z-[2]"
           style={{ height: sleepTopZoneH * PX_PER_HOUR }}
         >
-          <div className="w-full h-full bg-black/[0.035] dark:bg-white/[0.03]" />
+          <div className="w-full h-full bg-black/[0.06] dark:bg-white/[0.03]" />
           {/* Faint border at awakeStart */}
           <div className="absolute bottom-0 left-0 right-0 border-b-2 border-dashed border-black/[0.12] dark:border-white/[0.10]" />
         </div>
@@ -68,7 +70,7 @@ export default function DayColumn({ date, events, searchQuery, onEventClick, onS
         >
           {/* Faint border at awakeEnd */}
           <div className="absolute top-0 left-0 right-0 border-t-2 border-dashed border-black/[0.12] dark:border-white/[0.10]" />
-          <div className="w-full h-full bg-black/[0.035] dark:bg-white/[0.03]" />
+          <div className="w-full h-full bg-black/[0.06] dark:bg-white/[0.03]" />
         </div>
       )}
 

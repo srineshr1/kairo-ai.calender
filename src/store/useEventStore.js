@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { toast } from './useToastStore'
 import { getWorkWeekStart, addWeek, subWeek, fmtDate, timeToMinutes } from '../lib/dateUtils'
 
 const genId = () => 'e' + Date.now() + Math.random().toString(36).slice(2, 6)
@@ -47,36 +48,66 @@ export const useEventStore = create(
       // Sleep/awake zone settings (hours 0-23)
       awakeStart: 6,
       awakeEnd: 24, // midnight = 24 (exclusive end)
+      // Loading and error states
+      isLoading: false,
+      error: null,
 
       setSearchQuery: (q) => set({ searchQuery: q }),
       setAwakeStart: (h) => set({ awakeStart: h }),
       setAwakeEnd: (h) => set({ awakeEnd: h }),
+      setLoading: (isLoading) => set({ isLoading }),
+      setError: (error) => set({ error }),
+      clearError: () => set({ error: null }),
 
       nextWeek: () => set((s) => ({ currentWeekStart: addWeek(s.currentWeekStart) })),
       prevWeek: () => set((s) => ({ currentWeekStart: subWeek(s.currentWeekStart) })),
       jumpToDate: (date) => set({ currentWeekStart: getWorkWeekStart(date) }),
 
-      addEvent: (ev) => set((s) => {
-        const newEv = { id: genId(), done: false, cancelled: false, recurrence: 'none', recurrenceEnd: '', ...ev }
-        const log = {
-          id: logId(), eventId: newEv.id, title: newEv.title,
-          status: getTaskStatus(newEv), timestamp: new Date().toISOString(),
+      addEvent: (ev) => {
+        set({ isLoading: true, error: null })
+        try {
+          set((s) => {
+            const newEv = { id: genId(), done: false, cancelled: false, recurrence: 'none', recurrenceEnd: '', ...ev }
+            const log = {
+              id: logId(), eventId: newEv.id, title: newEv.title,
+              status: getTaskStatus(newEv), timestamp: new Date().toISOString(),
+            }
+            return { events: [...s.events, newEv], taskLog: [...s.taskLog, log], isLoading: false }
+          })
+        } catch (error) {
+          set({ error: error.message || 'Failed to add event', isLoading: false })
         }
-        return { events: [...s.events, newEv], taskLog: [...s.taskLog, log] }
-      }),
+      },
 
-      editEvent: (id, changes, editAll = false) => set((s) => ({
-        events: s.events.map((e) => {
-          if (e.id === id) return { ...e, ...changes }
-          if (editAll && e.id === id) return { ...e, ...changes }
-          return e
-        })
-      })),
+      editEvent: (id, changes, editAll = false) => {
+        set({ isLoading: true, error: null })
+        try {
+          set((s) => ({
+            events: s.events.map((e) => {
+              if (e.id === id) return { ...e, ...changes }
+              if (editAll && e.id === id) return { ...e, ...changes }
+              return e
+            }),
+            isLoading: false
+          }))
+        } catch (error) {
+          set({ error: error.message || 'Failed to edit event', isLoading: false })
+        }
+      },
 
-      deleteEvent: (id) => set((s) => ({
-        events: s.events.filter((e) => e.id !== id),
-        taskLog: s.taskLog.filter((l) => l.eventId !== id),
-      })),
+      deleteEvent: (id) => {
+        set({ isLoading: true, error: null })
+        try {
+          set((s) => ({
+            events: s.events.filter((e) => e.id !== id),
+            taskLog: s.taskLog.filter((l) => l.eventId !== id),
+            isLoading: false
+          }))
+        } catch (error) {
+          set({ error: error.message || 'Failed to delete event', isLoading: false })
+          toast.error(error.message || 'Failed to delete event', 'Delete Failed')
+        }
+      },
 
       // Double-click to mark done — logs the status change
       markDone: (id) => set((s) => {

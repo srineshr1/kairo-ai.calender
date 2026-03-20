@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const BRIDGE_URL = 'http://localhost:3001'
+const BRIDGE_URL = import.meta.env.VITE_BRIDGE_URL || 'http://localhost:3001'
 
 export function useWhatsAppBridgeStatus() {
   const [status, setStatus] = useState({

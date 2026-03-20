@@ -14,9 +14,12 @@ export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsA
   const { connected } = useWhatsAppBridgeStatus()
 
   return (
-    <div className="bg-white dark:bg-[#1f1d30] border-b border-black/[0.08] dark:border-white/10 px-6 h-14 flex items-center gap-4 flex-shrink-0">
+    <div className="bg-white dark:bg-[#1f1d30] border-b dark:border-white/10 px-6 h-14 flex items-center gap-4 flex-shrink-0" style={{ backgroundColor: isDark ? undefined : '#faf9f7', borderBottomColor: isDark ? undefined : '#e8e4de' }}>
       {/* Search */}
-      <div className="flex items-center gap-2 bg-main dark:bg-[#252340] rounded-lg px-3 py-1.5 border border-black/[0.06] dark:border-white/10 w-56">
+      <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 border w-56" style={{ 
+        backgroundColor: isDark ? '#252340' : '#eee9e2',
+        borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#ddd8d0'
+      }}>
         <Icon name="search" className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
         <input
           type="text"

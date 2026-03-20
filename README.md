@@ -4,6 +4,7 @@ An intelligent calendar application that combines traditional calendar managemen
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![React](https://img.shields.io/badge/React-18.3.1-61dafb)
+![Tests](https://img.shields.io/badge/tests-78%20passing-success)
 ![License](https://img.shields.io/badge/license-Private-red)
 
 ## Features
@@ -16,6 +17,8 @@ An intelligent calendar application that combines traditional calendar managemen
 - **Color Coding** - 5 color themes (pink, green, blue, amber, gray) for event categorization
 - **Real-time "Now" Line** - Shows current time on today's column
 - **Dark/Light Mode** - Persistent theme preference with smooth transitions
+- **Loading States** - Smooth loading indicators for all async operations
+- **Error Handling** - Toast notifications for user-friendly error messages
 
 ### AI Assistant
 - **Natural Language Processing** - Uses Ollama (llama3 model) for calendar queries
@@ -57,6 +60,7 @@ An intelligent calendar application that combines traditional calendar managemen
 ### Frontend
 - **React 18.3.1** - UI framework
 - **Vite 5.3.5** - Build tool & dev server
+- **Vitest 4.1.0** - Unit testing framework
 - **Tailwind CSS 3.4.7** - Utility-first CSS framework
 - **date-fns 3.6.0** - Date manipulation library
 - **Zustand 4.5.4** - Lightweight state management with localStorage persistence
@@ -72,6 +76,7 @@ An intelligent calendar application that combines traditional calendar managemen
 - **Node.js** (CommonJS)
 - **whatsapp-web.js 1.34.6** - WhatsApp Web API wrapper
 - **Express 4.19.2** - HTTP server (port 3001)
+- **express-rate-limit** - API rate limiting for security
 - **Puppeteer** - Browser automation for WhatsApp
 - **axios** - HTTP client
 - **pdf-parse** - PDF text extraction
@@ -106,21 +111,40 @@ An intelligent calendar application that combines traditional calendar managemen
    cd ..
    ```
 
-4. **Configure WhatsApp Bridge** (Optional)
+4. **Configure Environment Variables**
+   
+   **Frontend** (root directory):
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` if you need to change default ports:
+   ```env
+   VITE_OLLAMA_URL=http://localhost:11434      # Ollama server URL
+   VITE_BRIDGE_URL=http://localhost:3001       # WhatsApp bridge URL
+   VITE_POLL_INTERVAL=3000                     # Polling interval in ms
+   ```
+
+   **WhatsApp Bridge** (whatsapp-bridge directory):
+   ```bash
+   cd whatsapp-bridge
+   cp .env.example .env
+   ```
+   
+   Edit `whatsapp-bridge/.env`:
+   ```env
+   OLLAMA_URL=http://localhost:11434      # Ollama server URL
+   GEMINI_API_KEY=your_api_key_here       # For image analysis fallback
+   BRIDGE_PORT=3001                       # Bridge server port
+   CALENDAR_URL=http://localhost:5173     # Frontend URL for CORS
+   ```
+
+5. **Configure WhatsApp Bridge** (Optional)
    
    Edit `whatsapp-bridge/config.js` to customize:
    - `WATCHED_GROUPS` - WhatsApp group names to monitor
    - `KEYWORDS` - Trigger words for event detection
    - `MIN_KEYWORD_MATCHES` - Minimum keyword matches required
-
-5. **Environment Variables** (Optional)
-   
-   Create a `.env` file in `whatsapp-bridge/` directory:
-   ```env
-   OLLAMA_URL=http://localhost:11434      # Ollama server URL
-   GEMINI_API_KEY=your_api_key_here       # For image analysis fallback
-   BRIDGE_PORT=3001                       # Bridge server port
-   ```
 
 ## Usage
 
@@ -184,23 +208,30 @@ ai-calendar/
 │   │   ├── Modal/          # EventModal
 │   │   ├── Sidebar/        # Sidebar, TaskList, MiniCalendar
 │   │   ├── WhatsApp/       # WhatsAppSettings, Toast
+│   │   ├── ErrorBoundary.jsx  # Error boundary component
+│   │   ├── LoadingSpinner.jsx # Loading components
+│   │   ├── ToastContainer.jsx # Toast notification system
 │   │   └── Icons.jsx       # Icon components
 │   ├── hooks/              # useWhatsAppSync, useWhatsAppBridgeStatus
 │   ├── lib/                # dateUtils.js
-│   ├── store/              # Zustand stores (events, chat, settings)
+│   ├── store/              # Zustand stores (events, chat, settings, toast)
+│   ├── __tests__/          # Unit & integration tests
 │   ├── App.jsx             # Root component
 │   ├── main.jsx            # React entry point
 │   └── index.css           # Global styles
 ├── whatsapp-bridge/
 │   ├── index.js            # WhatsApp client initialization
-│   ├── bridge-server.js    # Express API server
+│   ├── bridge-server.js    # Express API server with rate limiting
 │   ├── analyzer.js         # AI-powered content analysis
 │   ├── extractor.js        # Event parsing utilities
 │   ├── calendarPush.js     # Event queue management
 │   ├── config.js           # User configuration
+│   ├── .env.example        # Environment variable template
 │   └── public/             # JSON queue storage
+├── .env.example            # Frontend environment template
 ├── package.json
 ├── vite.config.js
+├── vitest.config.js        # Test configuration
 ├── tailwind.config.js
 └── index.html
 ```
@@ -266,6 +297,52 @@ Choose from 5 color themes when creating/editing events:
 - Blue
 - Amber
 - Gray
+
+## Testing
+
+This project uses [Vitest](https://vitest.dev/) for unit and integration testing.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (auto-rerun on file changes)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+### Test Coverage
+
+Current test coverage:
+- **78 tests** across 4 test suites
+- **Coverage**: Utilities, stores, and core business logic
+
+Test files:
+- `src/__tests__/dateUtils.test.js` - Date parsing and manipulation utilities
+- `src/__tests__/useEventStore.test.js` - Event store CRUD operations
+- `src/__tests__/extractor.test.js` - Event extraction from natural language
+- `src/__tests__/ErrorBoundary.test.jsx` - Error boundary component
+
+### Writing Tests
+
+Example test structure:
+```javascript
+import { describe, it, expect } from 'vitest'
+import { useEventStore } from '../store/useEventStore'
+
+describe('useEventStore', () => {
+  it('should add an event', () => {
+    const store = useEventStore.getState()
+    const event = { title: 'Test', date: '2024-01-01', time: '10:00' }
+    store.addEvent(event)
+    expect(store.events).toHaveLength(1)
+  })
+})
+```
 
 ## Building for Production
 

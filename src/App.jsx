@@ -6,9 +6,11 @@ import ChatSidebar from './components/Chat/ChatSidebar'
 import EventModal from './components/Modal/EventModal'
 import WhatsAppSettings from './components/WhatsApp/WhatsAppSettings'
 import WhatsAppToast from './components/WhatsAppToast'
+import ToastContainer from './components/ToastContainer'
 import { useWhatsAppSync } from './hooks/useWhatsAppSync'
 import { useEventStore } from './store/useEventStore'
 import { useDarkStore } from './store/useDarkStore'
+import { LoadingSkeleton } from './components/LoadingSpinner'
 
 function PlaceholderView({ label }) {
   return (
@@ -29,10 +31,20 @@ export default function App() {
   const [activeView, setActiveView] = useState('Week')
   const [modal, setModal] = useState({ open: false, event: null, date: null, time: null })
   const [whatsappSettingsOpen, setWhatsappSettingsOpen] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const { events } = useEventStore()
   const { isDark } = useDarkStore()
   const [darkKey, setDarkKey] = useState(0)
   const { lastSyncedEvents } = useWhatsAppSync()
+
+  // Initial loading state
+  useEffect(() => {
+    // Simulate initial app load (checking localStorage, etc.)
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     if (isDark) {
@@ -77,40 +89,52 @@ export default function App() {
 
   return (
     <div key={darkKey} className={`flex h-screen w-screen overflow-hidden font-sans ${isDark ? 'bg-sidebar-deep' : 'bg-gray-100'}`}>
-      <div className="flex-shrink-0">
-        <Sidebar onAddEvent={() => openAdd()} />
-      </div>
-
-      <main className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <TopBar
-          activeView={activeView}
-          setActiveView={setActiveView}
-          onAddEvent={() => openAdd()}
-          onWhatsAppSettings={() => setWhatsappSettingsOpen(true)}
-        />
-        <div className="flex-1 min-w-0 min-h-0 overflow-hidden bg-main dark:bg-[#1a1a2e] flex flex-col">
-          {renderView()}
+      {isInitialLoading ? (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-6xl">
+            <div className="mb-6 h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+            <LoadingSkeleton rows={8} />
+          </div>
         </div>
-      </main>
+      ) : (
+        <>
+          <div className="flex-shrink-0">
+            <Sidebar onAddEvent={() => openAdd()} />
+          </div>
 
-      <div className="flex-shrink-0">
-        <ChatSidebar />
-      </div>
+          <main className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <TopBar
+              activeView={activeView}
+              setActiveView={setActiveView}
+              onAddEvent={() => openAdd()}
+              onWhatsAppSettings={() => setWhatsappSettingsOpen(true)}
+            />
+            <div className="flex-1 min-w-0 min-h-0 overflow-hidden bg-main dark:bg-[#1a1a2e] flex flex-col">
+              {renderView()}
+            </div>
+          </main>
 
-      <EventModal
-        isOpen={modal.open}
-        onClose={closeModal}
-        editEvent={modal.event}
-        defaultDate={modal.date}
-        defaultTime={modal.time}
-      />
+          <div className="flex-shrink-0">
+            <ChatSidebar />
+          </div>
 
-      <WhatsAppSettings 
-        isOpen={whatsappSettingsOpen} 
-        onClose={() => setWhatsappSettingsOpen(false)} 
-      />
+          <EventModal
+            isOpen={modal.open}
+            onClose={closeModal}
+            editEvent={modal.event}
+            defaultDate={modal.date}
+            defaultTime={modal.time}
+          />
 
-      <WhatsAppToast events={lastSyncedEvents} />
+          <WhatsAppSettings 
+            isOpen={whatsappSettingsOpen} 
+            onClose={() => setWhatsappSettingsOpen(false)} 
+          />
+
+          <WhatsAppToast events={lastSyncedEvents} />
+          <ToastContainer />
+        </>
+      )}
     </div>
   )
 }

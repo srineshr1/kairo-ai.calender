@@ -26,9 +26,9 @@ export default function EventBlock({ event, topPx, heightPx, dimmed, onClick }) 
     left: 4,
     right: 4,
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.4 : dimmed ? 0.15 : 1,
+    opacity: isDragging ? 0.08 : dimmed ? 0.15 : 1,
     zIndex: isDragging ? 50 : 4,
-    transition: isDragging ? 'none' : 'opacity 0.15s, box-shadow 0.15s, transform 0.1s',
+    transition: isDragging ? 'opacity 0.15s ease' : 'all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1)',
     cursor: isDragging ? 'grabbing' : 'grab',
     borderLeft: `3px solid ${colors.border}`,
   }

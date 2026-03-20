@@ -11,7 +11,7 @@ export default function Sidebar({ onAddEvent }) {
 
   return (
     <aside className={`w-[260px] min-w-[260px] flex-shrink-0 flex flex-col border-r overflow-y-auto ${
-      isDark ? 'bg-sidebar' : 'bg-white border-black/10'
+      isDark ? 'bg-sidebar' : 'bg-[#f0ede8] border-black/10'
     }`}>
       {/* Logo */}
       <div className="px-5 pt-7 pb-5 flex items-center justify-between flex-shrink-0">
@@ -31,9 +31,9 @@ export default function Sidebar({ onAddEvent }) {
       </div>
 
       {/* This month section */}
-      <div className={`mx-3 mb-2 rounded-xl overflow-hidden ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}>
+      <div className={`mx-3 mb-2 rounded-xl overflow-hidden ${isDark ? 'bg-white/[0.04]' : 'bg-[#e8e4de]'}`}>
         <button
-          className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-medium transition-colors ${isDark ? 'text-gray-200 hover:bg-white/[0.04]' : 'text-gray-700 hover:bg-gray-200/50'}`}
+          className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-medium transition-colors border-b ${isDark ? 'text-gray-200 hover:bg-white/[0.04] border-transparent' : 'text-gray-700 hover:bg-[#e0dcd6] border-[#d8d4ce]'}`}
           onClick={() => setThisMonthOpen((v) => !v)}
         >
           <span>This month</span>
@@ -46,9 +46,9 @@ export default function Sidebar({ onAddEvent }) {
       </div>
 
       {/* Quick notes */}
-      <div className={`mx-3 mb-2 rounded-xl overflow-hidden ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}>
+      <div className={`mx-3 mb-2 rounded-xl overflow-hidden ${isDark ? 'bg-white/[0.04]' : 'bg-[#e8e4de]'}`}>
         <button
-          className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-medium transition-colors ${isDark ? 'text-gray-200 hover:bg-white/[0.04]' : 'text-gray-700 hover:bg-gray-200/50'}`}
+          className={`w-full flex items-center justify-between px-3.5 py-3 text-[13px] font-medium transition-colors border-b ${isDark ? 'text-gray-200 hover:bg-white/[0.04] border-transparent' : 'text-gray-700 hover:bg-[#e0dcd6] border-[#d8d4ce]'}`}
           onClick={() => setNotesOpen((v) => !v)}
         >
           <span>Quick notes</span>
