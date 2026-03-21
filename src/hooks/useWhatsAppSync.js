@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useChatStore } from '../store/useChatStore'
 import { useEventStore } from '../store/useEventStore'
 import { useNotificationStore } from '../store/useNotificationStore'
+import { useSettingsStore } from '../store/useSettingsStore'
 import { getEvents, clearEvents, WhatsAppBridgeError } from '../api/whatsappClient'
 import { DEFAULT_POLL_INTERVAL } from '../lib/constants'
 
-const POLL_INTERVAL = parseInt(import.meta.env.VITE_POLL_INTERVAL || String(DEFAULT_POLL_INTERVAL), 10)
+const DEFAULT_POLL = parseInt(import.meta.env.VITE_POLL_INTERVAL || String(DEFAULT_POLL_INTERVAL), 10)
 
 const genId = () => 'e' + Date.now() + Math.random().toString(36).slice(2, 6)
 
@@ -13,6 +14,7 @@ export function useWhatsAppSync() {
   const { addMessage } = useChatStore()
   const { addEvent } = useEventStore()
   const { addNotification } = useNotificationStore()
+  const { whatsappPollInterval, whatsappAutoAdd } = useSettingsStore()
   
   const [isConnected, setIsConnected] = useState(false)
   const [lastSyncedEvents, setLastSyncedEvents] = useState([])
@@ -59,19 +61,28 @@ export function useWhatsAppSync() {
               done: false,
             }
             
-            try {
-              addEvent(newEv)
-              newEvents.push(newEv)
-              
+            // Only auto-add if setting is enabled
+            if (whatsappAutoAdd) {
+              try {
+                addEvent(newEv)
+                newEvents.push(newEv)
+                
+                addMessage({ 
+                  role: 'ai', 
+                  text: `📱 Added event from ${ev.group || 'WhatsApp'}: "${newEv.title}"` 
+                })
+              } catch (addErr) {
+                console.error('Failed to add event from WhatsApp:', addErr)
+                addMessage({
+                  role: 'ai',
+                  text: `⚠ Failed to add WhatsApp event: ${addErr.message}`
+                })
+              }
+            } else {
+              // Auto-add is disabled, just log the detection
               addMessage({ 
                 role: 'ai', 
-                text: `📱 Added event from ${ev.group || 'WhatsApp'}: "${newEv.title}"` 
-              })
-            } catch (addErr) {
-              console.error('Failed to add event from WhatsApp:', addErr)
-              addMessage({
-                role: 'ai',
-                text: `⚠ Failed to add WhatsApp event: ${addErr.message}`
+                text: `📱 Detected event from ${ev.group || 'WhatsApp'}: "${ev.title}" (auto-add disabled)` 
               })
             }
           }
@@ -115,15 +126,17 @@ export function useWhatsAppSync() {
     } finally {
       pollingRef.current = false
     }
-  }, [addEvent, addMessage])
+  }, [addEvent, addMessage, whatsappAutoAdd])
 
   useEffect(() => {
     syncEvents()
     
-    const interval = setInterval(syncEvents, POLL_INTERVAL)
+    // Use poll interval from settings, default to env var or constant
+    const pollInterval = (whatsappPollInterval || DEFAULT_POLL) * 1000
+    const interval = setInterval(syncEvents, pollInterval)
     
     return () => clearInterval(interval)
-  }, [syncEvents])
+  }, [syncEvents, whatsappPollInterval])
 
   return {
     isConnected,

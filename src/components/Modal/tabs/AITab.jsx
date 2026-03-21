@@ -44,6 +44,7 @@ export default function AITab() {
           placeholder="http://localhost:11434"
           value={ollamaUrl}
           onChange={(value) => updateSetting('ollamaUrl', value)}
+          disabled={true}
         />
 
         <Select
@@ -57,6 +58,7 @@ export default function AITab() {
           ]}
           value={ollamaModel}
           onChange={(value) => updateSetting('ollamaModel', value)}
+          disabled={true}
         />
 
         <Slider
@@ -68,6 +70,7 @@ export default function AITab() {
           max={2}
           step={0.1}
           showValue={true}
+          disabled={true}
         />
       </SettingSection>
 

@@ -49,6 +49,7 @@ export default function WhatsAppTab() {
           placeholder="http://localhost:3001"
           value={whatsappBridgeUrl}
           onChange={(value) => updateSetting('whatsappBridgeUrl', value)}
+          disabled={true}
         />
 
         <NumberInput
@@ -74,16 +75,17 @@ export default function WhatsAppTab() {
         <div>
           <button
             onClick={handleManageGroups}
-            className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+            disabled={true}
+            className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors opacity-50 cursor-not-allowed ${
               isDark
-                ? 'bg-white/10 hover:bg-white/20 text-gray-300'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                ? 'bg-white/10 text-gray-300'
+                : 'bg-gray-100 text-gray-700'
             }`}
           >
             Select Groups...
           </button>
           <p className={`text-[12px] mt-2 ${isDark ? 'text-gray-600' : 'text-gray-500'}`}>
-            Opens group selection from TopBar WhatsApp button
+            Coming soon
           </p>
         </div>
       </SettingSection>

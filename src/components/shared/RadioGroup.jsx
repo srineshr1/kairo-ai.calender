@@ -4,11 +4,11 @@ import { useDarkStore } from '../../store/useDarkStore'
 /**
  * Radio group component for single selection
  */
-export default function RadioGroup({ label, description, options, value, onChange, layout = 'vertical' }) {
+export default function RadioGroup({ label, description, options, value, onChange, layout = 'vertical', disabled = false }) {
   const { isDark } = useDarkStore()
 
   return (
-    <div>
+    <div className={disabled ? 'opacity-50 pointer-events-none select-none' : ''}>
       {label && (
         <label className={`text-[13px] font-medium block mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
           {label}
@@ -24,7 +24,7 @@ export default function RadioGroup({ label, description, options, value, onChang
           <button
             key={option.value}
             type="button"
-            onClick={() => onChange(option.value)}
+            onClick={() => !disabled && onChange(option.value)}
             className={`flex items-center gap-2 text-[13px] transition-colors ${
               value === option.value
                 ? isDark
@@ -52,6 +52,11 @@ export default function RadioGroup({ label, description, options, value, onChang
           </button>
         ))}
       </div>
+      {disabled && (
+        <p className={`text-[11px] mt-2 ${isDark ? 'text-gray-600' : 'text-gray-500'}`}>
+          Coming soon
+        </p>
+      )}
     </div>
   )
 }

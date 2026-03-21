@@ -6,6 +6,7 @@ import {
 import { format, addDays, subDays } from 'date-fns'
 import { useEventStore } from '../../store/useEventStore'
 import { useDarkStore } from '../../store/useDarkStore'
+import { useSettingsStore } from '../../store/useSettingsStore'
 import {
   fmtDate, isToday, expandRecurring,
   timeToMinutes, minutesToTime, snapTo15,
@@ -16,20 +17,35 @@ import { Icon } from '../Icons'
 
 const HOURS = Array.from({ length: TOTAL_HOURS }, (_, i) => i)
 
-export default function DayView({ onEventClick, onSlotClick }) {
+export default function DayView({ onEventClick, onSlotClick, initialDate }) {
   const {
     events, searchQuery, reschedule,
     awakeStart, awakeEnd, setAwakeStart, setAwakeEnd,
   } = useEventStore()
   const { isDark } = useDarkStore()
+  const { showPastEvents } = useSettingsStore()
 
-  const [currentDay, setCurrentDay] = useState(new Date())
+  const [currentDay, setCurrentDay] = useState(initialDate || new Date())
   const [draggingEv, setDraggingEv] = useState(null)
   const [slideDir, setSlideDir] = useState(null)
   const [animKey, setAnimKey] = useState(0)
   const [showSleepSettings, setShowSleepSettings] = useState(false)
 
   const expandedEvents = expandRecurring(events, [currentDay])
+  
+  // Check if event is in the past and should be dimmed
+  const isEventPast = (ev) => {
+    const now = new Date()
+    const eventDateTime = new Date(`${ev.date}T${ev.time}`)
+    return eventDateTime < now
+  }
+
+  // Apply dimming to past events based on showPastEvents setting
+  const getEventOpacity = (ev) => {
+    if (ev.done) return 0.5  // Completed events are always dimmed
+    if (!showPastEvents && isEventPast(ev)) return 0.4  // Past events dimmed if setting is off
+    return 1
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -180,6 +196,7 @@ export default function DayView({ onEventClick, onSlotClick }) {
                   awakeEnd={awakeEnd}
                   onEventClick={onEventClick}
                   onSlotClick={onSlotClick}
+                  getEventOpacity={getEventOpacity}
                 />
               </div>
             </div>

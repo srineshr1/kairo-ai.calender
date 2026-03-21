@@ -50,7 +50,7 @@ export default function NotificationsTab() {
 
         <Toggle
           label="Sound alerts"
-          description="Play sound when notifications appear (coming soon)"
+          description="Play sound when notifications appear"
           checked={soundAlerts}
           onChange={(checked) => updateSetting('soundAlerts', checked)}
           disabled={true}

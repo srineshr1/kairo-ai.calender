@@ -9,6 +9,7 @@ import { restrictToWindowEdges } from '@dnd-kit/modifiers'
 import { format } from 'date-fns'
 import { useEventStore } from '../../store/useEventStore'
 import { useDarkStore } from '../../store/useDarkStore'
+import { useSettingsStore } from '../../store/useSettingsStore'
 import {
   getFullWeekDays, fmtDate, isToday, expandRecurring,
   timeToMinutes, minutesToTime, snapTo15,
@@ -26,6 +27,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
     awakeStart, awakeEnd, setAwakeStart, setAwakeEnd,
   } = useEventStore()
   const { isDark } = useDarkStore()
+  const { showPastEvents } = useSettingsStore()
 
   const days = getFullWeekDays(currentWeekStart)
   const [draggingEv, setDraggingEv] = useState(null)
@@ -34,6 +36,20 @@ export default function WeekView({ onEventClick, onSlotClick }) {
   const [showSleepSettings, setShowSleepSettings] = useState(false)
 
   const expandedEvents = expandRecurring(events, days)
+  
+  // Check if event is in the past and should be dimmed
+  const isEventPast = (ev) => {
+    const now = new Date()
+    const eventDateTime = new Date(`${ev.date}T${ev.time}`)
+    return eventDateTime < now
+  }
+
+  // Apply dimming to past events based on showPastEvents setting
+  const getEventOpacity = (ev) => {
+    if (ev.done) return 0.5  // Completed events are always dimmed
+    if (!showPastEvents && isEventPast(ev)) return 0.4  // Past events dimmed if setting is off
+    return 1
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -214,6 +230,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
                     onSlotClick={onSlotClick}
                     awakeStart={awakeStart}
                     awakeEnd={awakeEnd}
+                    getEventOpacity={getEventOpacity}
                   />
                 )
               })}

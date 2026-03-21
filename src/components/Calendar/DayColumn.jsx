@@ -5,7 +5,7 @@ import { fmtDate, isToday, timeToMinutes } from '../../lib/dateUtils'
 import { PX_PER_HOUR, TOTAL_HOURS, SNAP_INTERVAL_MINUTES, DEFAULT_EVENT_DURATION } from '../../lib/constants'
 import EventBlock from './EventBlock'
 
-export default function DayColumn({ date, events, searchQuery, onEventClick, onSlotClick, awakeStart, awakeEnd }) {
+export default function DayColumn({ date, events, searchQuery, onEventClick, onSlotClick, awakeStart, awakeEnd, getEventOpacity }) {
   const dateStr = fmtDate(date)
   const todayCol = isToday(date)
 
@@ -91,6 +91,7 @@ export default function DayColumn({ date, events, searchQuery, onEventClick, onS
         const topPx = (mins / 60) * PX_PER_HOUR
           const heightPx = ((ev.duration || DEFAULT_EVENT_DURATION) / 60) * PX_PER_HOUR - 4
         const dimmed = !!searchQuery && !ev.title.toLowerCase().includes(searchQuery.toLowerCase())
+        const opacity = getEventOpacity ? getEventOpacity(ev) : 1
         return (
           <EventBlock
             key={ev.id}
@@ -98,6 +99,7 @@ export default function DayColumn({ date, events, searchQuery, onEventClick, onS
             topPx={topPx}
             heightPx={heightPx}
             dimmed={dimmed}
+            opacity={opacity}
             onClick={onEventClick}
           />
         )

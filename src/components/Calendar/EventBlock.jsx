@@ -11,7 +11,7 @@ const COLOR_MAP = {
   gray:  { bg: 'bg-event-gray dark:bg-[#2a2a2a]',  border: '#888888', text: '#222222', darkText: '#e0e0e0' },
 }
 
-export default function EventBlock({ event, topPx, heightPx, dimmed, onClick }) {
+export default function EventBlock({ event, topPx, heightPx, dimmed, opacity, onClick }) {
   const { isDark } = useDarkStore()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: event.id,
@@ -28,6 +28,9 @@ export default function EventBlock({ event, topPx, heightPx, dimmed, onClick }) 
     ? `${dragTransform} scale(0.93)`
     : dragTransform || 'scale(1)'
 
+  // Calculate final opacity: dragging > dimmed (search) > opacity prop > 1
+  const finalOpacity = isDragging ? 0 : dimmed ? 0.15 : (opacity !== undefined ? opacity : 1)
+  
   const style = {
     position: 'absolute',
     top: topPx,
@@ -35,7 +38,7 @@ export default function EventBlock({ event, topPx, heightPx, dimmed, onClick }) 
     left: 4,
     right: 4,
     transform: combinedTransform,
-    opacity: isDragging ? 0 : dimmed ? 0.15 : 1,
+    opacity: finalOpacity,
     zIndex: isDragging ? 50 : 4,
     transition: isDragging 
       ? 'transform 0.15s ease, opacity 0s' 

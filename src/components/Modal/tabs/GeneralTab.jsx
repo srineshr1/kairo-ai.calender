@@ -18,6 +18,7 @@ export default function GeneralTab() {
           ]}
           value={timeFormat}
           onChange={(value) => updateSetting('timeFormat', value)}
+          disabled={true}
         />
 
         <RadioGroup
@@ -31,6 +32,7 @@ export default function GeneralTab() {
           value={weekStartDay}
           onChange={(value) => updateSetting('weekStartDay', value)}
           layout="horizontal"
+          disabled={true}
         />
 
         <RadioGroup
@@ -43,6 +45,7 @@ export default function GeneralTab() {
           ]}
           value={dateFormat}
           onChange={(value) => updateSetting('dateFormat', value)}
+          disabled={true}
         />
       </SettingSection>
 
@@ -56,6 +59,7 @@ export default function GeneralTab() {
           value="en"
           onChange={() => {}}
           layout="horizontal"
+          disabled={true}
         />
       </SettingSection>
     </div>

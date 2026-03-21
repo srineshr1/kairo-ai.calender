@@ -2,19 +2,38 @@ import React, { useState } from 'react'
 import { format, addMonths, subMonths, isSameMonth, isToday as fnsIsToday } from 'date-fns'
 import { useEventStore } from '../../store/useEventStore'
 import { useDarkStore } from '../../store/useDarkStore'
+import { useSettingsStore } from '../../store/useSettingsStore'
 import { getMonthDays, fmtDate } from '../../lib/dateUtils'
 import { Icon } from '../Icons'
+import DayPreviewPopup from './DayPreviewPopup'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export default function MonthView({ onEventClick, onSlotClick }) {
+export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }) {
   const { events, searchQuery } = useEventStore()
   const { isDark } = useDarkStore()
+  const { showPastEvents } = useSettingsStore()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [slideDir, setSlideDir] = useState(null)
   const [animKey, setAnimKey] = useState(0)
+  const [selectedDay, setSelectedDay] = useState(null)
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
 
   const days = getMonthDays(currentMonth)
+  
+  // Check if event is in the past and should be dimmed
+  const isEventPast = (ev) => {
+    const now = new Date()
+    const eventDateTime = new Date(`${ev.date}T${ev.time}`)
+    return eventDateTime < now
+  }
+
+  // Apply dimming to past events based on showPastEvents setting
+  const getEventOpacity = (ev) => {
+    if (ev.done) return 0.5  // Completed events are always dimmed
+    if (!showPastEvents && isEventPast(ev)) return 0.4  // Past events dimmed if setting is off
+    return 1
+  }
 
   const navigate = (dir) => {
     setSlideDir(dir)
@@ -56,15 +75,38 @@ export default function MonthView({ onEventClick, onSlotClick }) {
     })
   }
 
-  const handleDayClick = (date) => {
-    const dateEvents = getEventsForDate(date)
-    if (dateEvents.length > 0) {
-      // If there are events, open the first one for editing
-      onEventClick(dateEvents[0])
-    } else {
-      // If no events, create new event
-      onSlotClick(fmtDate(date), '09:00')
+  // Single click - show day preview popup
+  const handleDayClick = (date, event) => {
+    event.stopPropagation()
+    
+    // Get click position
+    const rect = event.currentTarget.getBoundingClientRect()
+    setPopupPosition({
+      x: rect.left,
+      y: rect.bottom + 8
+    })
+    
+    // Get events for this day
+    const dayEvents = getEventsForDate(date)
+    setSelectedDay({ date, events: dayEvents })
+  }
+
+  // Double click - navigate to day view
+  const handleDayDoubleClick = (date) => {
+    setSelectedDay(null)
+    if (onNavigateToDay) {
+      onNavigateToDay(date)
     }
+  }
+
+  // Close popup
+  const closePopup = () => {
+    setSelectedDay(null)
+  }
+
+  // Navigate to day view
+  const navigateToDay = (date) => {
+    handleDayDoubleClick(date)
   }
 
   const monthLabel = format(currentMonth, 'MMMM yyyy')
@@ -132,7 +174,8 @@ export default function MonthView({ onEventClick, onSlotClick }) {
               return (
                 <button
                   key={idx}
-                  onClick={() => handleDayClick(date)}
+                  onClick={(e) => handleDayClick(date, e)}
+                  onDoubleClick={() => handleDayDoubleClick(date)}
                   className={`
                     p-2 flex flex-col items-center justify-start
                     hover:bg-light-card dark:hover:bg-[#252340] transition-colors
@@ -156,20 +199,24 @@ export default function MonthView({ onEventClick, onSlotClick }) {
                   {/* Event dots */}
                   {hasEvents && (
                     <div className="flex flex-wrap gap-1 justify-center mt-1">
-                      {dayEvents.slice(0, 3).map((ev, i) => (
-                        <div
-                          key={i}
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{
-                            backgroundColor: ev.color === 'pink' ? '#ec4899'
-                              : ev.color === 'green' ? '#10b981'
-                              : ev.color === 'amber' ? '#f59e0b'
-                              : ev.color === 'gray' ? '#6b7280'
-                              : '#3b82f6',
-                          }}
-                          title={ev.title}
-                        />
-                      ))}
+                      {dayEvents.slice(0, 3).map((ev, i) => {
+                        const eventOpacity = getEventOpacity(ev)
+                        return (
+                          <div
+                            key={i}
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{
+                              backgroundColor: ev.color === 'pink' ? '#ec4899'
+                                : ev.color === 'green' ? '#10b981'
+                                : ev.color === 'amber' ? '#f59e0b'
+                                : ev.color === 'gray' ? '#6b7280'
+                                : '#3b82f6',
+                              opacity: eventOpacity,
+                            }}
+                            title={ev.title}
+                          />
+                        )
+                      })}
                       {dayEvents.length > 3 && (
                         <div className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">
                           +{dayEvents.length - 3}
@@ -191,47 +238,17 @@ export default function MonthView({ onEventClick, onSlotClick }) {
         </div>
       </div>
 
-      {/* Event list for selected month (optional) */}
-      <div className="bg-white dark:bg-[#1f1d30] border-t border-black/[0.06] dark:border-white/10 px-6 py-4 max-h-48 overflow-y-auto">
-        <h3 className="text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          Events this month ({events.filter(ev => {
-            const evDate = new Date(ev.date)
-            return isSameMonth(evDate, currentMonth)
-          }).length})
-        </h3>
-        <div className="space-y-1">
-          {events
-            .filter(ev => {
-              const evDate = new Date(ev.date)
-              return isSameMonth(evDate, currentMonth)
-            })
-            .slice(0, 5)
-            .map(ev => (
-              <button
-                key={ev.id}
-                onClick={() => onEventClick(ev)}
-                className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-              >
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{
-                    backgroundColor: ev.color === 'pink' ? '#ec4899'
-                      : ev.color === 'green' ? '#10b981'
-                      : ev.color === 'amber' ? '#f59e0b'
-                      : ev.color === 'gray' ? '#6b7280'
-                      : '#3b82f6',
-                  }}
-                />
-                <span className="text-[12px] text-gray-700 dark:text-gray-300 truncate">
-                  {ev.title}
-                </span>
-                <span className="text-[11px] text-gray-400 dark:text-gray-500 ml-auto">
-                  {format(new Date(ev.date), 'MMM d')}
-                </span>
-              </button>
-            ))}
-        </div>
-      </div>
+      {/* Day Preview Popup */}
+      {selectedDay && (
+        <DayPreviewPopup
+          date={selectedDay.date}
+          events={selectedDay.events}
+          position={popupPosition}
+          onClose={closePopup}
+          onEventClick={onEventClick}
+          onViewDay={navigateToDay}
+        />
+      )}
     </div>
   )
 }

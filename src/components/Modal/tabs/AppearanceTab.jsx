@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import SettingSection from '../../shared/SettingSection'
 import Toggle from '../../shared/Toggle'
 import Select from '../../shared/Select'
@@ -10,7 +10,7 @@ export default function AppearanceTab() {
 
   return (
     <div>
-      <SettingSection title="Theme">
+      <SettingSection title="Accent Color">
         <ColorPicker
           label="Accent color"
           description="Primary color used throughout the app"

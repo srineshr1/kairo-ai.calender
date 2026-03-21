@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useEventStore } from '../../store/useEventStore'
+import { useSettingsStore } from '../../store/useSettingsStore'
 import { validateEvent } from '../../lib/validation'
 import LoadingSpinner from '../LoadingSpinner'
 
@@ -13,14 +14,15 @@ const COLORS = [
 
 const RECURRENCE = ['none', 'daily', 'weekly', 'monthly']
 
-const empty = {
-  title: '', date: '', time: '09:00', duration: 60,
-  sub: '', color: 'pink', recurrence: 'none', recurrenceEnd: '',
-}
-
 export default function EventModal({ isOpen, onClose, editEvent: editTarget, defaultDate, defaultTime }) {
   const { addEvent, editEvent, deleteEvent, isLoading } = useEventStore()
-  const [form, setForm] = useState(empty)
+  const { defaultEventDuration, defaultEventColor } = useSettingsStore()
+  const [form, setForm] = useState({
+    title: '', date: '', time: '09:00', 
+    duration: defaultEventDuration || 60,
+    sub: '', color: defaultEventColor || 'blue', 
+    recurrence: 'none', recurrenceEnd: ''
+  })
   const [showRecurringPrompt, setShowRecurringPrompt] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
   const [isSaving, setIsSaving] = useState(false)
@@ -32,15 +34,21 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
     // Clear validation errors when modal opens
     setValidationErrors({})
     if (editTarget) {
-      setForm({ ...empty, ...editTarget })
+      setForm({ ...editTarget })
     } else {
+      // Use default values from settings for new events
       setForm({
-        ...empty,
+        title: '',
         date: defaultDate || new Date().toISOString().split('T')[0],
         time: defaultTime || '09:00',
+        duration: defaultEventDuration || 60,
+        sub: '',
+        color: defaultEventColor || 'blue',
+        recurrence: 'none',
+        recurrenceEnd: '',
       })
     }
-  }, [isOpen, editTarget, defaultDate, defaultTime])
+  }, [isOpen, editTarget, defaultDate, defaultTime, defaultEventDuration, defaultEventColor])
 
   if (!isOpen) return null
 

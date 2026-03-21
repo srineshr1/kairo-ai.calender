@@ -27,6 +27,13 @@ export default function App() {
   const { events } = useEventStore()
   const { isDark, setIsDark } = useDarkStore()
   const { lastSyncedEvents } = useWhatsAppSync()
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  
+  // Navigate to day view
+  const navigateToDay = (date) => {
+    setSelectedDate(date)
+    setActiveView('Day')
+  }
   
   // Enable notification triggers
   useNotificationTriggers()
@@ -91,6 +98,7 @@ export default function App() {
           <DayView
             onEventClick={openEdit}
             onSlotClick={(date, time) => openAdd(date, time)}
+            initialDate={selectedDate}
           />
         )
       case 'Month':
@@ -98,6 +106,7 @@ export default function App() {
           <MonthView
             onEventClick={openEdit}
             onSlotClick={(date, time) => openAdd(date, time)}
+            onNavigateToDay={navigateToDay}
           />
         )
       default:
