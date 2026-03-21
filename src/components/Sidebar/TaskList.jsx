@@ -1,5 +1,5 @@
 import React, { useRef } from 'react'
-import { useEventStore, getTaskStatus, STATUS_STYLES } from '../../store/useEventStore'
+import { useEventStore, getTaskStatus, STATUS_STYLES_LIGHT, STATUS_STYLES_DARK } from '../../store/useEventStore.ts'
 import { useDarkStore } from '../../store/useDarkStore'
 import { isSameMonth } from 'date-fns'
 import { parseDate } from '../../lib/dateUtils'
@@ -28,6 +28,8 @@ export default function TaskList({ onAdd }) {
       }, 300)
     }
   }
+
+  const STATUS_STYLES = isDark ? STATUS_STYLES_DARK : STATUS_STYLES_LIGHT
 
   return (
     <div className="px-3 pb-3">

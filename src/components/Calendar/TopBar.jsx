@@ -17,11 +17,11 @@ export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsA
   const { isOpen, togglePanel, unreadCount } = useNotificationStore()
 
   return (
-    <div className="bg-white dark:bg-[#1f1d30] border-b dark:border-white/10 px-6 h-14 flex items-center gap-4 flex-shrink-0" style={{ backgroundColor: isDark ? undefined : '#faf9f7', borderBottomColor: isDark ? undefined : '#e8e4de' }}>
+    <div className="border-b dark:border-white/10 px-6 h-14 flex items-center gap-4 flex-shrink-0" style={{ backgroundColor: isDark ? '#1f1d30' : '#faf9f7', borderBottomColor: isDark ? undefined : '#e5e2dc' }}>
       {/* Search */}
       <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 border w-56" style={{ 
-        backgroundColor: isDark ? '#252340' : '#eee9e2',
-        borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#ddd8d0'
+        backgroundColor: isDark ? '#252340' : '#f0ede8',
+        borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e5e2dc'
       }}>
         <Icon name="search" className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
         <input
@@ -29,14 +29,14 @@ export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsA
           placeholder="Search events…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-transparent border-none outline-none text-[13px] text-gray-700 dark:text-gray-200 placeholder-gray-400 w-full font-sans"
+          className="bg-transparent border-none outline-none text-[13px] text-light-text dark:text-gray-200 placeholder-gray-400 w-full font-sans"
         />
       </div>
 
       <div className="flex-1" />
 
       {/* View tabs — Day / Week / Month only */}
-      <div className="flex gap-0.5 bg-[#f0eeed] dark:bg-[#252340] rounded-lg p-0.5">
+      <div className="flex gap-0.5 bg-light-card dark:bg-[#252340] rounded-lg p-0.5">
         {VIEWS.map((v) => (
           <button
             key={v}
@@ -44,8 +44,8 @@ export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsA
             className={`
               px-3.5 py-1.5 rounded-md text-[12.5px] font-medium transition-all duration-150
               ${activeView === v
-                ? 'bg-white dark:bg-[#1a1a2e] text-gray-800 dark:text-gray-100 shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-white/10'}
+                ? 'bg-light-bg dark:bg-[#1a1a2e] text-light-text dark:text-gray-100 shadow-sm'
+                : 'text-light-text-secondary dark:text-gray-400 hover:text-light-text dark:hover:text-gray-200 hover:bg-light-card/50 dark:hover:bg-white/10'}
             `}
           >
             {v}
@@ -58,7 +58,7 @@ export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsA
       <div className="flex gap-1">
         <button
           onClick={onWhatsAppSettings}
-          className="relative w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+          className="relative w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
           title={connected ? 'WhatsApp Connected' : enabled ? 'WhatsApp Disconnected' : 'WhatsApp Disabled'}
         >
           <svg className={`w-4 h-4 ${connected ? 'text-[#25D366]' : ''}`} viewBox="0 0 24 24" fill="currentColor">
@@ -70,26 +70,26 @@ export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsA
         </button>
         <button
           onClick={() => toggle()}
-          className="w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
           title="Toggle dark mode"
         >
           <Icon name={isDark ? 'sun' : 'moon'} className="w-4 h-4" />
         </button>
         <button
           onClick={onAddEvent}
-          className="w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
           title="Add event"
         >
           <Icon name="plus" className="w-4 h-4" />
         </button>
-        <button className="w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors" title="Profile">
+        <button className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors" title="Profile">
           <Icon name="user" className="w-4 h-4" />
         </button>
         <div className="relative">
           <button
             data-notification-trigger
             onClick={togglePanel}
-            className="relative w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+            className="relative w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
             title="Notifications"
           >
             <Icon name="bell" className="w-4 h-4" />
@@ -103,7 +103,7 @@ export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsA
         </div>
         <button
           onClick={onSettings}
-          className="w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
           title="Settings"
         >
           <Icon name="cog" className="w-4 h-4" />

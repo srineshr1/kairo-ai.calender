@@ -138,14 +138,30 @@ export const getTaskStatus = (ev: Event): TaskStatus => {
 }
 
 /**
- * Status style configurations for UI display
+ * Status style configurations for UI display (light mode)
  */
-export const STATUS_STYLES: Record<TaskStatus, StatusStyle> = {
+export const STATUS_STYLES_LIGHT: Record<TaskStatus, StatusStyle> = {
+  done:      { label: 'Done',      pill: 'bg-green-100 text-green-700 border-green-300' },
+  upcoming:  { label: 'Upcoming',  pill: 'bg-blue-100 text-blue-700 border-blue-300' },
+  overdue:   { label: 'Overdue',   pill: 'bg-red-100 text-red-700 border-red-300' },
+  cancelled: { label: 'Cancelled', pill: 'bg-gray-200 text-gray-600 border-gray-300' },
+}
+
+/**
+ * Status style configurations for UI display (dark mode)
+ */
+export const STATUS_STYLES_DARK: Record<TaskStatus, StatusStyle> = {
   done:      { label: 'Done',      pill: 'bg-green-900/40 text-green-400 border-green-700/40' },
   upcoming:  { label: 'Upcoming',  pill: 'bg-blue-900/40 text-blue-400 border-blue-700/40' },
   overdue:   { label: 'Overdue',   pill: 'bg-red-900/40 text-red-400 border-red-700/40' },
   cancelled: { label: 'Cancelled', pill: 'bg-gray-800/60 text-gray-500 border-gray-700/40' },
 }
+
+/**
+ * Get status styles based on theme (backwards compatibility)
+ * @deprecated Use STATUS_STYLES_LIGHT or STATUS_STYLES_DARK directly
+ */
+export const STATUS_STYLES = STATUS_STYLES_DARK
 
 /**
  * Event store with Zustand + localStorage persistence

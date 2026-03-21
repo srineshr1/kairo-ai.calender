@@ -78,26 +78,26 @@ export default function MonthView({ onEventClick, onSlotClick }) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Month navigation */}
-      <div className="bg-white dark:bg-[#1f1d30] px-7 py-3 flex items-center gap-3 border-b border-black/[0.06] dark:border-white/10 flex-shrink-0">
+      <div className="px-7 py-3 flex items-center gap-3 border-b dark:border-white/10 flex-shrink-0" style={{ backgroundColor: isDark ? '#1f1d30' : '#faf9f7', borderBottomColor: isDark ? undefined : '#e5e2dc' }}>
         <button
           onClick={() => navigate('left')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 hover:text-gray-700 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
         >
           <Icon name="chevronLeft" className="w-4 h-4" />
         </button>
-        <h2 className="font-display text-[22px] text-gray-800 dark:text-gray-100 tracking-tight min-w-[200px]">
+        <h2 className="font-display text-[22px] text-light-text dark:text-gray-100 tracking-tight min-w-[200px]">
           {monthLabel}
         </h2>
         <button
           onClick={() => navigate('right')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 hover:text-gray-700 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
         >
           <Icon name="chevronRight" className="w-4 h-4" />
         </button>
 
         <button
           onClick={() => setCurrentMonth(new Date())}
-          className="ml-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+          className="ml-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium text-light-text-secondary dark:text-gray-300 hover:bg-light-card dark:hover:bg-white/10 transition-colors"
         >
           Today
         </button>
@@ -113,7 +113,7 @@ export default function MonthView({ onEventClick, onSlotClick }) {
             {WEEKDAYS.map(day => (
               <div
                 key={day}
-                className="text-center text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider py-2"
+                className="text-center text-[11px] font-semibold text-light-text-secondary dark:text-gray-400 uppercase tracking-wider py-2"
               >
                 {day}
               </div>
@@ -121,7 +121,7 @@ export default function MonthView({ onEventClick, onSlotClick }) {
           </div>
 
           {/* Days grid */}
-          <div className={`flex-1 grid grid-cols-7 gap-px bg-gray-200 dark:bg-white/10 rounded-lg overflow-hidden ${slideClass}`}>
+          <div className={`flex-1 grid grid-cols-7 gap-px rounded-lg overflow-hidden ${slideClass}`} style={{ backgroundColor: isDark ? undefined : '#e5e2dc' }}>
             {days.map((date, idx) => {
               const dateStr = fmtDate(date)
               const isCurrentMonth = isSameMonth(date, currentMonth)
@@ -134,8 +134,8 @@ export default function MonthView({ onEventClick, onSlotClick }) {
                   key={idx}
                   onClick={() => handleDayClick(date)}
                   className={`
-                    bg-white dark:bg-[#1f1d30] p-2 flex flex-col items-center justify-start
-                    hover:bg-gray-50 dark:hover:bg-[#252340] transition-colors
+                    p-2 flex flex-col items-center justify-start
+                    hover:bg-light-card dark:hover:bg-[#252340] transition-colors
                     ${!isCurrentMonth ? 'opacity-30' : ''}
                     ${isToday ? 'ring-2 ring-blue-500 ring-inset' : ''}
                   `}

@@ -72,26 +72,26 @@ export default function DayView({ onEventClick, onSlotClick }) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Date navigation */}
-      <div className="bg-white dark:bg-[#1f1d30] px-7 py-3 flex items-center gap-3 border-b border-black/[0.06] dark:border-white/10 flex-shrink-0">
+      <div className="px-7 py-3 flex items-center gap-3 border-b dark:border-white/10 flex-shrink-0" style={{ backgroundColor: isDark ? '#1f1d30' : '#faf9f7', borderBottomColor: isDark ? undefined : '#e5e2dc' }}>
         <button
           onClick={() => navigate('left')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 hover:text-gray-700 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
         >
           <Icon name="chevronLeft" className="w-4 h-4" />
         </button>
-        <h2 className="font-display text-[22px] text-gray-800 dark:text-gray-100 tracking-tight min-w-[300px]">
+        <h2 className="font-display text-[22px] text-light-text dark:text-gray-100 tracking-tight min-w-[300px]">
           {dayLabel}
         </h2>
         <button
           onClick={() => navigate('right')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 hover:text-gray-700 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
         >
           <Icon name="chevronRight" className="w-4 h-4" />
         </button>
 
         <button
           onClick={() => setCurrentDay(new Date())}
-          className="ml-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+          className="ml-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium text-light-text-secondary dark:text-gray-300 hover:bg-light-card dark:hover:bg-white/10 transition-colors"
         >
           Today
         </button>
@@ -101,7 +101,7 @@ export default function DayView({ onEventClick, onSlotClick }) {
         {/* Sleep zone settings toggle */}
         <button
           onClick={() => setShowSleepSettings(!showSleepSettings)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 hover:text-gray-700 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
           title="Sleep hours"
         >
           <Icon name="clock" className="w-4 h-4" />
@@ -110,8 +110,8 @@ export default function DayView({ onEventClick, onSlotClick }) {
 
       {/* Sleep settings panel */}
       {showSleepSettings && (
-        <div className="bg-[#faf9f7] dark:bg-[#252340] border-b border-black/[0.06] dark:border-white/10 px-7 py-3 flex items-center gap-4">
-          <span className="text-[13px] text-gray-600 dark:text-gray-300 font-medium">Awake hours:</span>
+        <div className="border-b dark:border-white/10 px-7 py-3 flex items-center gap-4" style={{ backgroundColor: '#faf9f7', borderBottomColor: isDark ? undefined : '#e5e2dc' }}>
+          <span className="text-[13px] text-light-text dark:text-gray-300 font-medium">Awake hours:</span>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -119,21 +119,23 @@ export default function DayView({ onEventClick, onSlotClick }) {
               max="23"
               value={awakeStart}
               onChange={(e) => setAwakeStart(Number(e.target.value))}
-              className="w-16 px-2 py-1 rounded border border-gray-300 dark:border-white/20 bg-white dark:bg-[#1a1a2e] text-[13px] text-gray-700 dark:text-gray-200"
+              className="w-16 px-2 py-1 rounded border dark:border-white/20 text-[13px] text-light-text dark:text-gray-200"
+              style={{ borderColor: '#e5e2dc', backgroundColor: '#faf9f7' }}
             />
-            <span className="text-gray-500 dark:text-gray-400 text-[13px]">to</span>
+            <span className="text-light-text-secondary dark:text-gray-400 text-[13px]">to</span>
             <input
               type="number"
               min="0"
               max="23"
               value={awakeEnd}
               onChange={(e) => setAwakeEnd(Number(e.target.value))}
-              className="w-16 px-2 py-1 rounded border border-gray-300 dark:border-white/20 bg-white dark:bg-[#1a1a2e] text-[13px] text-gray-700 dark:text-gray-200"
+              className="w-16 px-2 py-1 rounded border dark:border-white/20 text-[13px] text-light-text dark:text-gray-200"
+              style={{ borderColor: '#e5e2dc', backgroundColor: '#faf9f7' }}
             />
           </div>
           <button
             onClick={() => setShowSleepSettings(false)}
-            className="ml-4 text-[12px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            className="ml-4 text-[12px] text-light-text-secondary dark:text-gray-400 hover:text-light-text dark:hover:text-gray-200"
           >
             Done
           </button>
@@ -149,7 +151,7 @@ export default function DayView({ onEventClick, onSlotClick }) {
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="relative flex h-full">
             {/* Hour labels */}
-            <div className="sticky left-0 z-20 bg-main dark:bg-[#1a1a2e] w-16 flex-shrink-0 border-r border-black/[0.06] dark:border-white/10">
+            <div className="sticky left-0 z-20 w-16 flex-shrink-0 border-r dark:border-white/10" style={{ backgroundColor: isDark ? '#1a1a2e' : '#f0ede8', borderRightColor: isDark ? undefined : '#e5e2dc' }}>
               {HOURS.map((h) => {
                 const isSleep = h < awakeStart || h >= awakeEnd
                 return (
@@ -157,8 +159,8 @@ export default function DayView({ onEventClick, onSlotClick }) {
                     key={h}
                     className={`text-[11px] text-right pr-2 font-medium transition-colors ${
                       isSleep
-                        ? 'text-gray-300 dark:text-gray-700'
-                        : 'text-gray-400 dark:text-gray-500'
+                        ? 'text-light-text-secondary/40 dark:text-gray-700'
+                        : 'text-light-text-secondary/70 dark:text-gray-500'
                     }`}
                     style={{ height: `${PX_PER_HOUR}px` }}
                   >

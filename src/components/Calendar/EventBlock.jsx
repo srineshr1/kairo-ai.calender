@@ -1,6 +1,7 @@
 import React from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
+import { useDarkStore } from '../../store/useDarkStore'
 
 const COLOR_MAP = {
   pink:  { bg: 'bg-event-pink dark:bg-[#3d2040]',  border: '#c060d0', text: '#4a1259', darkText: '#f5d8f8' },
@@ -11,13 +12,13 @@ const COLOR_MAP = {
 }
 
 export default function EventBlock({ event, topPx, heightPx, dimmed, onClick }) {
+  const { isDark } = useDarkStore()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: event.id,
     data: { event },
   })
 
   const colorScheme = COLOR_MAP[event.color] || COLOR_MAP.gray
-  const isDark = document.documentElement.classList.contains('dark')
   const titleColor = isDark ? colorScheme.darkText : colorScheme.text
 
   const dragTransform = transform ? CSS.Transform.toString(transform) : undefined

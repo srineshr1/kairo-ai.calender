@@ -11,8 +11,7 @@ const DEFAULT_SETTINGS = {
   dateFormat: 'YYYY-MM-DD', // 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD'
   language: 'en',
 
-  // Appearance
-  theme: 'auto', // 'light' | 'dark' | 'auto'
+  // Appearance (theme removed - controlled by TopBar toggle)
   accentColor: '#3b82f6', // Hex color
   compactMode: false,
   fontSize: 'medium', // 'small' | 'medium' | 'large' | 'extraLarge'

@@ -18,27 +18,21 @@ import { useSettingsStore } from './store/useSettingsStore'
 import { LoadingSkeleton } from './components/LoadingSpinner'
 
 export default function App() {
-  const { defaultView } = useSettingsStore()
-  const [activeView, setActiveView] = useState(defaultView || 'Week')
+  const settings = useSettingsStore()
+  const [activeView, setActiveView] = useState('Week')
   const [modal, setModal] = useState({ open: false, event: null, date: null, time: null })
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [whatsappSettingsOpen, setWhatsappSettingsOpen] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const { events } = useEventStore()
-  const { isDark } = useDarkStore()
-  const [darkKey, setDarkKey] = useState(0)
+  const { isDark, setIsDark } = useDarkStore()
   const { lastSyncedEvents } = useWhatsAppSync()
   
   // Enable notification triggers
   useNotificationTriggers()
 
-  // Apply settings on mount
+  // Apply all settings whenever they change
   useEffect(() => {
-    const settings = useSettingsStore.getState()
-    
-    // Apply theme
-    applyTheme(settings.theme)
-    
     // Apply accent color
     document.documentElement.style.setProperty('--color-accent', settings.accentColor)
     
@@ -49,26 +43,14 @@ export default function App() {
     // Apply compact mode
     document.body.classList.toggle('compact-mode', settings.compactMode)
     
-    // Listen for system theme changes if auto mode
-    if (settings.theme === 'auto') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      const handler = (e) => {
-        useDarkStore.setState({ isDark: e.matches })
-      }
-      mediaQuery.addEventListener('change', handler)
-      return () => mediaQuery.removeEventListener('change', handler)
-    }
-  }, [])
+    // Set default view from settings
+    setActiveView(settings.defaultView === 'day' ? 'Day' : settings.defaultView === 'month' ? 'Month' : 'Week')
+  }, [settings.accentColor, settings.fontSize, settings.compactMode, settings.defaultView])
 
-  // Helper function to apply theme
-  const applyTheme = (theme) => {
-    if (theme === 'auto') {
-      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
-      useDarkStore.setState({ isDark: isDarkMode })
-    } else {
-      useDarkStore.setState({ isDark: theme === 'dark' })
-    }
-  }
+  // Apply dark mode class to html element
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark)
+  }, [isDark])
 
   // Load test helper in development
   useEffect(() => {
@@ -77,27 +59,13 @@ export default function App() {
     }
   }, [])
 
-  // Initial loading state
+  // Initial loading state (shorter delay)
   useEffect(() => {
-    // Simulate initial app load (checking localStorage, etc.)
     const timer = setTimeout(() => {
       setIsInitialLoading(false)
-    }, 500)
+    }, 100)
     return () => clearTimeout(timer)
   }, [])
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [])
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark)
-    setDarkKey(k => k + 1)
-  }, [isDark])
 
   const openAdd = (date = null, time = null) =>
     setModal({ open: true, event: null, date, time })
@@ -138,11 +106,11 @@ export default function App() {
   }
 
   return (
-    <div key={darkKey} className={`flex h-screen w-screen overflow-hidden font-sans ${isDark ? 'bg-sidebar-deep' : 'bg-gray-100'}`}>
+    <div className={`flex h-screen w-screen overflow-hidden font-sans ${isDark ? 'bg-sidebar-deep' : 'bg-light-bg'}`}>
       {isInitialLoading ? (
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-6xl">
-            <div className="mb-6 h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+            <div className="mb-6 h-8 w-48 bg-light-card dark:bg-gray-800 rounded animate-pulse" />
             <LoadingSkeleton rows={8} />
           </div>
         </div>
@@ -160,7 +128,7 @@ export default function App() {
               onWhatsAppSettings={() => setWhatsappSettingsOpen(true)}
               onSettings={() => setSettingsOpen(true)}
             />
-            <div className="flex-1 min-w-0 min-h-0 overflow-hidden bg-main dark:bg-[#1a1a2e] flex flex-col">
+            <div className="flex-1 min-w-0 min-h-0 overflow-hidden bg-light-card dark:bg-[#1a1a2e] flex flex-col">
               {renderView()}
             </div>
           </main>

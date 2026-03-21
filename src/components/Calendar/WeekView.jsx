@@ -78,19 +78,19 @@ export default function WeekView({ onEventClick, onSlotClick }) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Date range nav */}
-      <div className="bg-white dark:bg-[#1f1d30] px-7 py-3 flex items-center gap-3 border-b border-black/[0.06] dark:border-white/10 flex-shrink-0">
+      <div className="px-7 py-3 flex items-center gap-3 border-b border-light-border dark:border-white/10 flex-shrink-0" style={{ backgroundColor: isDark ? '#1f1d30' : '#faf9f7' }}>
         <button
           onClick={() => navigate('left')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 hover:text-gray-700 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
         >
           <Icon name="chevronLeft" className="w-4 h-4" />
         </button>
-        <h2 className="font-display text-[22px] text-gray-800 dark:text-gray-100 tracking-tight min-w-[200px]">
+        <h2 className="font-display text-[22px] text-light-text dark:text-gray-100 tracking-tight min-w-[200px]">
           {rangeLabel}
         </h2>
         <button
           onClick={() => navigate('right')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 hover:text-gray-700 transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
         >
           <Icon name="chevronRight" className="w-4 h-4" />
         </button>
@@ -102,8 +102,8 @@ export default function WeekView({ onEventClick, onSlotClick }) {
           onClick={() => setShowSleepSettings((v) => !v)}
           className={`flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-lg border transition-all ${
             showSleepSettings
-              ? 'bg-sidebar-deep text-white border-sidebar-deep'
-              : 'text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600'
+              ? 'bg-sidebar-deep text-white border-sidebar-deep dark:bg-sidebar-deep'
+              : 'text-light-text-secondary border-light-border hover:border-light-text-secondary hover:text-light-text'
           }`}
         >
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -115,12 +115,13 @@ export default function WeekView({ onEventClick, onSlotClick }) {
 
       {/* Sleep zone settings bar */}
       {showSleepSettings && (
-        <div className="bg-[#fafaf8] border-b border-black/[0.06] px-7 py-2.5 flex items-center gap-6 text-[12.5px] text-gray-500 animate-fadeUp">
-          <span className="font-medium text-gray-600">Awake hours</span>
+        <div className="border-b border-light-border px-7 py-2.5 flex items-center gap-6 text-[12.5px] text-light-text-secondary animate-fadeUp" style={{ backgroundColor: '#fafaf8' }}>
+          <span className="font-medium text-light-text">Awake hours</span>
           <div className="flex items-center gap-2">
-            <label className="text-gray-400">From</label>
+            <label className="text-light-text-secondary">From</label>
             <select
-              className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-[12px] text-gray-700 outline-none focus:border-accent transition-colors"
+              className="border border-light-border rounded-lg px-2 py-1 text-[12px] text-light-text outline-none focus:border-accent transition-colors"
+              style={{ backgroundColor: '#faf9f7' }}
               value={awakeStart}
               onChange={(e) => setAwakeStart(Number(e.target.value))}
             >
@@ -128,9 +129,10 @@ export default function WeekView({ onEventClick, onSlotClick }) {
                 <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
               ))}
             </select>
-            <label className="text-gray-400">To</label>
+            <label className="text-light-text-secondary">To</label>
             <select
-              className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-[12px] text-gray-700 outline-none focus:border-accent transition-colors"
+              className="border border-light-border rounded-lg px-2 py-1 text-[12px] text-light-text outline-none focus:border-accent transition-colors"
+              style={{ backgroundColor: '#faf9f7' }}
               value={awakeEnd}
               onChange={(e) => setAwakeEnd(Number(e.target.value))}
             >
@@ -139,7 +141,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
               ))}
             </select>
           </div>
-          <span className="text-gray-400 text-[11px]">Greyed areas = sleep time · changes saved automatically</span>
+          <span className="text-light-text-secondary text-[11px]">Greyed areas = sleep time · changes saved automatically</span>
         </div>
       )}
 
@@ -155,10 +157,10 @@ export default function WeekView({ onEventClick, onSlotClick }) {
           <div key={animKey} className={slideClass} style={{ willChange: 'transform, opacity' }}>
             {/* Week header */}
             <div
-              className="grid sticky top-0 z-20 dark:bg-[#1f1d30] border-b border-black/[0.06] dark:border-white/10"
+              className="grid sticky top-0 z-20 border-b dark:border-white/10"
               style={{ 
                 gridTemplateColumns: '56px repeat(7, 1fr)',
-                backgroundColor: isDark ? undefined : '#faf9f7',
+                backgroundColor: isDark ? '#1f1d30' : '#faf9f7',
                 boxShadow: isDark ? undefined : '0 1px 0 rgba(0,0,0,0.06)'
               }}
             >
@@ -170,12 +172,12 @@ export default function WeekView({ onEventClick, onSlotClick }) {
                     <span className={`
                       text-[26px] font-light leading-none font-display
                       ${today
-                        ? 'bg-sidebar-deep dark:bg-[#e8e4f8] text-white dark:text-[#1a1a2e] w-10 h-10 rounded-full inline-flex items-center justify-center text-[18px]'
-                        : 'text-gray-600 dark:text-gray-200 block'}
-                    `}>
+                        ? 'dark:bg-[#e8e4f8] text-white dark:text-[#1a1a2e] w-10 h-10 rounded-full inline-flex items-center justify-center text-[18px]'
+                        : 'text-light-text dark:text-gray-200 block'}
+                    `} style={today && !isDark ? { backgroundColor: '#9880cc', color: 'white' } : {}}>
                       {d.getDate()}
                     </span>
-                    <span className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-300 mt-1 block">
+                    <span className="text-[11px] uppercase tracking-wide text-light-text-secondary dark:text-gray-300 mt-1 block">
                       {format(d, 'EEE')}
                     </span>
                   </div>
@@ -186,11 +188,11 @@ export default function WeekView({ onEventClick, onSlotClick }) {
             {/* Body */}
             <div className="grid" style={{ gridTemplateColumns: '56px repeat(7, 1fr)' }}>
               {/* Time gutter — full 24hr */}
-              <div style={{ backgroundColor: isDark ? undefined : '#f5f3f0' }}>
+              <div style={{ backgroundColor: isDark ? undefined : '#f0ede8' }}>
                 {HOURS.map((h) => (
                   <div key={h} className="relative" style={{ height: PX_PER_HOUR }}>
                     <span className={`absolute -top-2 right-2 text-[11px] tabular-nums ${
-                      h >= awakeStart && h < awakeEnd ? 'text-gray-500 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'
+                      h >= awakeStart && h < awakeEnd ? 'text-light-text-secondary dark:text-gray-300' : 'text-light-text-secondary/60 dark:text-gray-500'
                     }`}>
                       {String(h).padStart(2, '0')}:00
                     </span>
@@ -228,7 +230,6 @@ export default function WeekView({ onEventClick, onSlotClick }) {
                 gray:  { bg: 'bg-event-gray dark:bg-[#2a2a2a]',  border: '#888888', text: '#222222', darkText: '#e0e0e0' },
               }
               const colorScheme = COLOR_MAP[draggingEv.color] || COLOR_MAP.gray
-              const isDark = document.documentElement.classList.contains('dark')
               const titleColor = isDark ? colorScheme.darkText : colorScheme.text
               
               return (
@@ -252,7 +253,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
                       {draggingEv.title}
                     </p>
                     {draggingEv.sub && (
-                      <p className="text-[11px] mt-0.5 truncate text-gray-600 dark:text-gray-400">{draggingEv.sub}</p>
+                      <p className="text-[11px] mt-0.5 truncate text-light-text-secondary dark:text-gray-400">{draggingEv.sub}</p>
                     )}
                   </div>
                 </div>

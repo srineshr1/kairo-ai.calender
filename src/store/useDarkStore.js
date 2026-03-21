@@ -6,6 +6,7 @@ export const useDarkStore = create(
     (set) => ({
       isDark: true,
       toggle: () => set((s) => ({ isDark: !s.isDark })),
+      setIsDark: (value) => set({ isDark: value }),
     }),
     { name: 'cal_dark' }
   )

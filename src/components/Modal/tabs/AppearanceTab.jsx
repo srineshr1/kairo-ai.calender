@@ -1,30 +1,16 @@
 import React, { useEffect } from 'react'
 import SettingSection from '../../shared/SettingSection'
-import RadioGroup from '../../shared/RadioGroup'
 import Toggle from '../../shared/Toggle'
 import Select from '../../shared/Select'
 import ColorPicker from '../../shared/ColorPicker'
 import { useSettingsStore } from '../../../store/useSettingsStore'
 
 export default function AppearanceTab() {
-  const { theme, accentColor, compactMode, fontSize, showWeekends, updateSetting } = useSettingsStore()
+  const { accentColor, compactMode, fontSize, showWeekends, updateSetting } = useSettingsStore()
 
   return (
     <div>
       <SettingSection title="Theme">
-        <RadioGroup
-          label="Color theme"
-          description="Choose your preferred color scheme"
-          options={[
-            { value: 'light', label: 'Light' },
-            { value: 'dark', label: 'Dark' },
-            { value: 'auto', label: 'Auto (system)' },
-          ]}
-          value={theme}
-          onChange={(value) => updateSetting('theme', value)}
-          layout="horizontal"
-        />
-
         <ColorPicker
           label="Accent color"
           description="Primary color used throughout the app"
