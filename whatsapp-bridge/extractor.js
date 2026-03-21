@@ -1,8 +1,28 @@
-// Extracts structured calendar events from raw model text response
+/**
+ * Event extraction utilities for WhatsApp messages
+ * Converts natural language and various date formats into structured calendar events
+ */
 
 const TODAY = new Date()
 
-// Parse Indian date formats → YYYY-MM-DD
+/**
+ * Parse various Indian date formats to ISO date string (YYYY-MM-DD)
+ * 
+ * Supported formats:
+ * - ISO format: "2026-03-21"
+ * - Indian format: "21/03/2026", "21-03-2026"
+ * - Written format: "17th March", "March 17", "17 March 2026"
+ * - Relative: "tomorrow", "next monday"
+ * 
+ * @param {string} str - Date string in various formats
+ * @returns {string|null} ISO date string (YYYY-MM-DD) or null if unparseable
+ * 
+ * @example
+ * parseIndianDate('21/03/2026') // '2026-03-21'
+ * parseIndianDate('17th March') // '2026-03-17'
+ * parseIndianDate('tomorrow') // '2026-03-22' (if today is 2026-03-21)
+ * parseIndianDate('next monday') // '2026-03-23' (calculates next Monday)
+ */
 function parseIndianDate(str) {
   if (!str) return null
 
@@ -70,7 +90,24 @@ function parseIndianDate(str) {
   return null
 }
 
-// Pick event color based on type
+/**
+ * Pick event color based on event title and type keywords
+ * 
+ * Color mapping:
+ * - Pink: exams, tests, vivas
+ * - Amber: cancellations, postponements, rescheduling
+ * - Green: holidays, leave
+ * - Blue: labs, practicals, or default
+ * 
+ * @param {string} [title=''] - Event title
+ * @param {string} [type=''] - Event type
+ * @returns {string} Color code ('pink', 'amber', 'green', 'blue')
+ * 
+ * @example
+ * pickColor('Math Exam', 'exam') // 'pink'
+ * pickColor('Holiday Announcement') // 'green'
+ * pickColor('Lab Session') // 'blue'
+ */
 function pickColor(title = '', type = '') {
   const t = (title + type).toLowerCase()
   if (t.includes('exam') || t.includes('test') || t.includes('viva')) return 'pink'
@@ -80,9 +117,52 @@ function pickColor(title = '', type = '') {
   return 'blue'
 }
 
+/**
+ * Generate unique ID for WhatsApp-sourced events
+ * Format: 'wa' + timestamp + random chars
+ * @returns {string} Unique event ID
+ * @example genId() // 'wa1711015234567abc'
+ */
 const genId = () => 'wa' + Date.now() + Math.random().toString(36).slice(2, 6)
 
-// Main extractor — takes raw model string, returns array of events
+/**
+ * Extract structured calendar events from raw text (AI model output or messages)
+ * 
+ * Supports two extraction strategies:
+ * 1. **JSON parsing**: Attempts to parse structured JSON from model output
+ * 2. **Regex scraping**: Falls back to date pattern matching with context extraction
+ * 
+ * @param {string} rawText - Raw text from AI model or WhatsApp message
+ * @param {string} [sourceGroup=''] - WhatsApp group name for attribution
+ * @returns {Array<Object>} Array of structured event objects
+ * 
+ * Event object structure:
+ * @property {string} id - Unique event identifier
+ * @property {string} title - Event title/description
+ * @property {string} date - ISO date (YYYY-MM-DD)
+ * @property {string} time - Time in HH:mm format (default: '09:00')
+ * @property {number} duration - Duration in minutes (default: 60)
+ * @property {string} sub - Subtitle/location (defaults to sourceGroup)
+ * @property {string} color - Event color ('pink', 'green', 'blue', 'amber', 'gray')
+ * @property {string} recurrence - Recurrence pattern ('none', 'daily', 'weekly', 'monthly')
+ * @property {string} recurrenceEnd - Recurrence end date (empty string if none)
+ * @property {boolean} done - Completion status
+ * @property {boolean} cancelled - Cancellation status
+ * @property {string} source - Event source ('whatsapp')
+ * @property {string} sourceGroup - Original WhatsApp group name
+ * 
+ * @example
+ * // JSON parsing (structured output from AI)
+ * const text = '[{"title":"Math Exam","date":"21/03/2026","time":"10:00"}]'
+ * extractEvents(text, 'College Group')
+ * // Returns: [{ id: 'wa...', title: 'Math Exam', date: '2026-03-21', ... }]
+ * 
+ * @example
+ * // Regex scraping (unstructured message)
+ * const msg = 'Reminder: Physics exam on 25th March at the main hall'
+ * extractEvents(msg, 'Class Updates')
+ * // Returns: [{ id: 'wa...', title: '...Physics exam on 25th March...', date: '2026-03-25', ... }]
+ */
 function extractEvents(rawText, sourceGroup = '') {
   if (!rawText) return []
 

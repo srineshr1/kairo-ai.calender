@@ -10,14 +10,13 @@ import { format } from 'date-fns'
 import { useEventStore } from '../../store/useEventStore'
 import { useDarkStore } from '../../store/useDarkStore'
 import {
-  getWorkWeekDays, fmtDate, isToday, expandRecurring,
+  getFullWeekDays, fmtDate, isToday, expandRecurring,
   timeToMinutes, minutesToTime, snapTo15,
 } from '../../lib/dateUtils'
+import { PX_PER_HOUR, TOTAL_HOURS, SNAP_INTERVAL_MINUTES } from '../../lib/constants'
 import DayColumn from './DayColumn'
 import { Icon } from '../Icons'
 
-const PX_PER_HOUR = 60
-const TOTAL_HOURS = 24
 const HOURS = Array.from({ length: TOTAL_HOURS }, (_, i) => i)
 
 export default function WeekView({ onEventClick, onSlotClick }) {
@@ -28,7 +27,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
   } = useEventStore()
   const { isDark } = useDarkStore()
 
-  const days = getWorkWeekDays(currentWeekStart)
+  const days = getFullWeekDays(currentWeekStart)
   const [draggingEv, setDraggingEv] = useState(null)
   const [slideDir, setSlideDir] = useState(null)
   const [animKey, setAnimKey] = useState(0)
@@ -158,7 +157,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
             <div
               className="grid sticky top-0 z-20 dark:bg-[#1f1d30] border-b border-black/[0.06] dark:border-white/10"
               style={{ 
-                gridTemplateColumns: '56px repeat(5, 1fr)',
+                gridTemplateColumns: '56px repeat(7, 1fr)',
                 backgroundColor: isDark ? undefined : '#faf9f7',
                 boxShadow: isDark ? undefined : '0 1px 0 rgba(0,0,0,0.06)'
               }}
@@ -185,7 +184,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
             </div>
 
             {/* Body */}
-            <div className="grid" style={{ gridTemplateColumns: '56px repeat(5, 1fr)' }}>
+            <div className="grid" style={{ gridTemplateColumns: '56px repeat(7, 1fr)' }}>
               {/* Time gutter — full 24hr */}
               <div style={{ backgroundColor: isDark ? undefined : '#f5f3f0' }}>
                 {HOURS.map((h) => (

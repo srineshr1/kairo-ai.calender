@@ -2,6 +2,7 @@ import { useChatStore } from '../../store/useChatStore'
 import { useEventStore } from '../../store/useEventStore'
 import { fmtDate } from '../../lib/dateUtils'
 import { toast } from '../../store/useToastStore'
+import { generateText, OllamaError } from '../../api/ollamaClient'
 
 const genId = () => 'e' + Date.now() + Math.random().toString(36).slice(2, 6)
 
@@ -99,36 +100,13 @@ CRITICAL RULES:
 - Always return valid JSON only, nothing else`
 
     try {
-      const OLLAMA_URL = import.meta.env.VITE_OLLAMA_URL || 'http://localhost:11434'
-      const res = await fetch(`${OLLAMA_URL}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          model, 
-          prompt: `${systemPrompt}\n\nUser: ${userText}`,
-          stream: false,
-          options: { temperature: 0.1 }
-        }),
+      // Use the ollamaClient abstraction layer
+      const data = await generateText({
+        model,
+        prompt: `${systemPrompt}\n\nUser: ${userText}`,
+        stream: false,
+        options: { temperature: 0.1 }
       })
-
-      // Handle HTTP errors
-      if (!res.ok) {
-        if (res.status === 404) {
-          throw new Error(`Model "${model}" not found. Try: ollama pull ${model}`)
-        } else if (res.status === 500) {
-          throw new Error('Ollama server error. Try restarting: ollama serve')
-        } else {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
-        }
-      }
-
-      // Parse response safely
-      let data
-      try {
-        data = await res.json()
-      } catch (parseErr) {
-        throw new Error('Invalid response from Ollama server')
-      }
 
       const raw = (data.response || '').trim()
 
@@ -205,36 +183,27 @@ CRITICAL RULES:
       setOnline(false)
       setTyping(false)
       
-      // Provide specific error messages based on error type
+      // Handle OllamaError with specific messages
       let errorMessage = '⚠ Could not reach AI assistant.\n\n'
       
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        errorMessage += 'Connection failed. Make sure Ollama is running:\n  ollama serve\n\nThen verify the model is installed:\n  ollama pull ' + model
-        toast.error('Ollama server is not reachable. Make sure Ollama is running (ollama serve)', 'AI Assistant Offline')
-      } else if (err.message.includes('not found')) {
+      if (err instanceof OllamaError) {
         errorMessage += err.message
-        toast.error(err.message, 'Model Not Found')
-      } else if (err.message.includes('timeout')) {
-        errorMessage += 'Request timed out. Ollama may be overloaded or the model is too slow.'
-        toast.error('Request timed out. Ollama may be overloaded.', 'AI Timeout')
+        
+        // Show appropriate toast notification
+        if (err.message.includes('not found')) {
+          toast.error(err.message, 'Model Not Found')
+        } else if (err.message.includes('timeout')) {
+          toast.error('Request timed out. Ollama may be overloaded.', 'AI Timeout')
+        } else if (err.message.includes('Failed to connect')) {
+          toast.error('Ollama server is not reachable. Make sure Ollama is running (ollama serve)', 'AI Assistant Offline')
+        } else {
+          toast.error(err.message || 'Something went wrong with the AI assistant', 'AI Error')
+        }
       } else {
+        // Fallback for non-OllamaError exceptions
         errorMessage += `Error: ${err.message}\n\nTry restarting Ollama or check if the model "${model}" is available.`
         toast.error(err.message || 'Something went wrong with the AI assistant', 'AI Error')
       }
-      
-      addMessage({ role: 'ai', text: errorMessage })
-      
-      // Log to console for debugging
-      console.error('Ollama error:', err)
-    }
-  }
-      
-      addMessage({ 
-        role: 'ai', 
-        text: `⚠ ${err.message || 'Could not connect to Ollama. Is it running?'}` 
-      })
-    }
-  }
       
       addMessage({ role: 'ai', text: errorMessage })
       

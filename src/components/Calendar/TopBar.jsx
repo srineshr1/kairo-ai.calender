@@ -4,14 +4,17 @@ import { useEventStore } from '../../store/useEventStore'
 import { useDarkStore } from '../../store/useDarkStore'
 import { useWhatsAppSettings } from '../../store/useWhatsAppSettings'
 import { useWhatsAppBridgeStatus } from '../../hooks/useWhatsAppBridgeStatus'
+import { useNotificationStore } from '../../store/useNotificationStore'
+import NotificationPanel from '../Notifications/NotificationPanel'
 
 const VIEWS = ['Day', 'Week', 'Month']
 
-export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsAppSettings }) {
+export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsAppSettings, onSettings }) {
   const { searchQuery, setSearchQuery } = useEventStore()
   const { isDark, toggle } = useDarkStore()
   const { enabled } = useWhatsAppSettings()
   const { connected } = useWhatsAppBridgeStatus()
+  const { isOpen, togglePanel, unreadCount } = useNotificationStore()
 
   return (
     <div className="bg-white dark:bg-[#1f1d30] border-b dark:border-white/10 px-6 h-14 flex items-center gap-4 flex-shrink-0" style={{ backgroundColor: isDark ? undefined : '#faf9f7', borderBottomColor: isDark ? undefined : '#e8e4de' }}>
@@ -82,10 +85,27 @@ export default function TopBar({ activeView, setActiveView, onAddEvent, onWhatsA
         <button className="w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors" title="Profile">
           <Icon name="user" className="w-4 h-4" />
         </button>
-        <button className="w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors" title="Notifications">
-          <Icon name="bell" className="w-4 h-4" />
-        </button>
-        <button className="w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors" title="Settings">
+        <div className="relative">
+          <button
+            data-notification-trigger
+            onClick={togglePanel}
+            className="relative w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+            title="Notifications"
+          >
+            <Icon name="bell" className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-medium">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </div>
+            )}
+          </button>
+          {isOpen && <NotificationPanel />}
+        </div>
+        <button
+          onClick={onSettings}
+          className="w-8 h-8 rounded-lg hover:bg-[#f0eeed] dark:hover:bg-white/10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+          title="Settings"
+        >
           <Icon name="cog" className="w-4 h-4" />
         </button>
       </div>

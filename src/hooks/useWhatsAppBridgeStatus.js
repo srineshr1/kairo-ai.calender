@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-
-const BRIDGE_URL = import.meta.env.VITE_BRIDGE_URL || 'http://localhost:3001'
+import { getStatus } from '../api/whatsappClient'
 
 export function useWhatsAppBridgeStatus() {
   const [status, setStatus] = useState({
@@ -12,15 +11,8 @@ export function useWhatsAppBridgeStatus() {
   useEffect(() => {
     async function checkStatus() {
       try {
-        const res = await fetch(`${BRIDGE_URL}/status`)
-        if (res.ok) {
-          const data = await res.json()
-          setStatus({
-            connected: data.connected || false,
-            qr: data.qr,
-            message: data.message || (data.connected ? 'Connected' : 'Disconnected')
-          })
-        }
+        const data = await getStatus()
+        setStatus(data)
       } catch (err) {
         setStatus({
           connected: false,

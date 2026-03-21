@@ -4,6 +4,7 @@ An intelligent calendar application that combines traditional calendar managemen
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![React](https://img.shields.io/badge/React-18.3.1-61dafb)
+![TypeScript](https://img.shields.io/badge/TypeScript-~40%25-3178c6)
 ![Tests](https://img.shields.io/badge/tests-78%20passing-success)
 ![License](https://img.shields.io/badge/license-Private-red)
 
@@ -59,6 +60,7 @@ An intelligent calendar application that combines traditional calendar managemen
 
 ### Frontend
 - **React 18.3.1** - UI framework
+- **TypeScript 5.7.3** - Type safety for core utilities and stores (~40% coverage)
 - **Vite 5.3.5** - Build tool & dev server
 - **Vitest 4.1.0** - Unit testing framework
 - **Tailwind CSS 3.4.7** - Utility-first CSS framework
@@ -202,36 +204,55 @@ An intelligent calendar application that combines traditional calendar managemen
 ```
 ai-calendar/
 ├── src/
+│   ├── api/                    # NEW: API abstraction layer
+│   │   ├── ollamaClient.js     # Centralized Ollama API calls
+│   │   └── whatsappClient.js   # Centralized WhatsApp bridge calls
 │   ├── components/
-│   │   ├── Calendar/       # WeekView, DayColumn, EventBlock, TopBar
-│   │   ├── Chat/           # ChatSidebar, AI integration
-│   │   ├── Modal/          # EventModal
-│   │   ├── Sidebar/        # Sidebar, TaskList, MiniCalendar
-│   │   ├── WhatsApp/       # WhatsAppSettings, Toast
-│   │   ├── ErrorBoundary.jsx  # Error boundary component
-│   │   ├── LoadingSpinner.jsx # Loading components
-│   │   ├── ToastContainer.jsx # Toast notification system
-│   │   └── Icons.jsx       # Icon components
-│   ├── hooks/              # useWhatsAppSync, useWhatsAppBridgeStatus
-│   ├── lib/                # dateUtils.js
-│   ├── store/              # Zustand stores (events, chat, settings, toast)
-│   ├── __tests__/          # Unit & integration tests
-│   ├── App.jsx             # Root component
-│   ├── main.jsx            # React entry point
-│   └── index.css           # Global styles
+│   │   ├── Calendar/           # WeekView, DayColumn, EventBlock, TopBar
+│   │   ├── Chat/               # ChatSidebar, AI integration (uses ollamaClient)
+│   │   ├── Modal/              # EventModal
+│   │   ├── Sidebar/            # Sidebar, TaskList, MiniCalendar
+│   │   ├── WhatsApp/           # WhatsAppSettings, Toast
+│   │   ├── ErrorBoundary.jsx   # Error boundary component
+│   │   ├── LoadingSpinner.jsx  # Loading components
+│   │   ├── ToastContainer.jsx  # Toast notification system
+│   │   └── Icons.jsx           # Icon components
+│   ├── hooks/                  # Custom React hooks
+│   │   ├── useWhatsAppSync.js  # WhatsApp polling (uses whatsappClient)
+│   │   ├── useWhatsAppBridgeStatus.js  # Bridge status (uses whatsappClient)
+│   │   ├── useDebounce.js      # NEW: Debounce utility
+│   │   ├── useLocalStorage.js  # NEW: localStorage wrapper
+│   │   └── useAsync.js         # NEW: Async state management
+│   ├── lib/                    # Utility functions
+│   │   ├── dateUtils.ts        # MIGRATED: Date utilities (TypeScript)
+│   │   ├── constants.ts        # NEW: App constants (TypeScript)
+│   │   └── validation.js       # Input validation
+│   ├── store/                  # Zustand state management
+│   │   ├── useEventStore.ts    # MIGRATED: Event CRUD (TypeScript)
+│   │   ├── useChatStore.js     # Chat history
+│   │   ├── useToastStore.js    # Toast notifications
+│   │   ├── useDarkStore.js     # Dark mode
+│   │   └── useSettingsStore.js # App settings
+│   ├── __tests__/              # Unit & integration tests
+│   ├── App.jsx                 # Root component
+│   ├── main.jsx                # React entry point
+│   └── index.css               # Global styles
 ├── whatsapp-bridge/
-│   ├── index.js            # WhatsApp client initialization
-│   ├── bridge-server.js    # Express API server with rate limiting
-│   ├── analyzer.js         # AI-powered content analysis
-│   ├── extractor.js        # Event parsing utilities
-│   ├── calendarPush.js     # Event queue management
-│   ├── config.js           # User configuration
-│   ├── .env.example        # Environment variable template
-│   └── public/             # JSON queue storage
-├── .env.example            # Frontend environment template
+│   ├── index.js                # WhatsApp client initialization
+│   ├── bridge-server.js        # Express API server with rate limiting
+│   ├── analyzer.js             # AI-powered content analysis
+│   ├── extractor.js            # Event parsing utilities (JSDoc documented)
+│   ├── calendarPush.js         # Event queue management
+│   ├── config.js               # User configuration
+│   ├── .env.example            # Environment variable template
+│   └── public/                 # JSON queue storage
+├── .env.example                # Frontend environment template
+├── tsconfig.json               # NEW: TypeScript configuration
+├── tsconfig.node.json          # NEW: TypeScript build config
+├── ARCHITECTURE.md             # NEW: System architecture documentation
 ├── package.json
 ├── vite.config.js
-├── vitest.config.js        # Test configuration
+├── vitest.config.js            # Test configuration
 ├── tailwind.config.js
 └── index.html
 ```
@@ -356,6 +377,75 @@ To preview the production build:
 ```bash
 npm run preview
 ```
+
+## Code Quality & Architecture
+
+### TypeScript Migration (~40% Coverage)
+
+The codebase is progressively migrating to TypeScript for improved type safety:
+
+**TypeScript Files:**
+- `src/lib/dateUtils.ts` - Date utilities with full type definitions
+- `src/store/useEventStore.ts` - Event store with comprehensive interfaces
+- `src/lib/constants.ts` - Centralized app constants
+
+**Key Interfaces:**
+```typescript
+interface Event {
+  id: string
+  title: string
+  date: string  // YYYY-MM-DD
+  time: string  // HH:MM
+  duration: number
+  sub: string
+  color: 'pink' | 'green' | 'blue' | 'amber' | 'gray'
+  recurrence: 'none' | 'daily' | 'weekly' | 'monthly'
+  recurrenceEnd: string
+  done: boolean
+}
+```
+
+### API Abstraction Layer
+
+Centralized API clients for clean separation of concerns:
+
+**ollamaClient.js** - Ollama API communication
+- `generateText()` - Send prompts to LLM
+- `checkHealth()` - Verify Ollama is running
+- `listModels()` - Get available models
+- Custom `OllamaError` for error handling
+
+**whatsappClient.js** - WhatsApp bridge communication
+- `getEvents()` - Fetch events from bridge
+- `clearEvents()` - Clear processed events
+- `getStatus()` - Get connection status and QR
+- Custom `WhatsAppBridgeError` for error handling
+
+### Custom Hooks
+
+Reusable React hooks for common patterns:
+
+- **useDebounce** - Debounce values for search/input
+- **useLocalStorage** - Sync state with localStorage
+- **useAsync** - Manage async operation states (loading, error, data)
+
+### Constants Extraction
+
+Centralized constants in `src/lib/constants.ts`:
+- Calendar configuration (PX_PER_HOUR, DAYS_OF_WEEK)
+- Time/duration defaults
+- Network/API config
+- UI/animation settings
+- Event colors and recurrence types
+- Validation limits
+
+### Documentation
+
+- **JSDoc Comments** - Comprehensive documentation for all utility functions
+- **ARCHITECTURE.md** - System architecture, data flow, component structure, and ASCII diagrams
+- **Type Definitions** - TypeScript interfaces for all data models
+
+For detailed system architecture, see [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ## Known Limitations
 

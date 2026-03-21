@@ -2,40 +2,80 @@ import React, { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar/Sidebar'
 import TopBar from './components/Calendar/TopBar'
 import WeekView from './components/Calendar/WeekView'
+import DayView from './components/Calendar/DayView'
+import MonthView from './components/Calendar/MonthView'
 import ChatSidebar from './components/Chat/ChatSidebar'
 import EventModal from './components/Modal/EventModal'
+import SettingsModal from './components/Modal/SettingsModal'
 import WhatsAppSettings from './components/WhatsApp/WhatsAppSettings'
 import WhatsAppToast from './components/WhatsAppToast'
 import ToastContainer from './components/ToastContainer'
 import { useWhatsAppSync } from './hooks/useWhatsAppSync'
+import { useNotificationTriggers } from './hooks/useNotificationTriggers'
 import { useEventStore } from './store/useEventStore'
 import { useDarkStore } from './store/useDarkStore'
+import { useSettingsStore } from './store/useSettingsStore'
 import { LoadingSkeleton } from './components/LoadingSpinner'
 
-function PlaceholderView({ label }) {
-  return (
-    <div className="flex-1 flex items-center justify-center bg-main text-gray-400 text-sm font-sans">
-      <div className="text-center">
-        <div className="text-3xl mb-3 opacity-30">
-          <svg className="w-10 h-10 mx-auto" viewBox="0 0 24 24" fill="currentColor">
-            <path fillRule="evenodd" d="M6.75 2.25A.75.75 0 017.5 3v1.5h9V3A.75.75 0 0118 3v1.5h.75a3 3 0 013 3v11.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V7.5a3 3 0 013-3H6V3a.75.75 0 01.75-.75zm13.5 9a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.5a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5v-7.5z" clipRule="evenodd" />
-          </svg>
-        </div>
-        <p className="text-[13px] text-gray-400">{label} view coming soon</p>
-      </div>
-    </div>
-  )
-}
-
 export default function App() {
-  const [activeView, setActiveView] = useState('Week')
+  const { defaultView } = useSettingsStore()
+  const [activeView, setActiveView] = useState(defaultView || 'Week')
   const [modal, setModal] = useState({ open: false, event: null, date: null, time: null })
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [whatsappSettingsOpen, setWhatsappSettingsOpen] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const { events } = useEventStore()
   const { isDark } = useDarkStore()
   const [darkKey, setDarkKey] = useState(0)
   const { lastSyncedEvents } = useWhatsAppSync()
+  
+  // Enable notification triggers
+  useNotificationTriggers()
+
+  // Apply settings on mount
+  useEffect(() => {
+    const settings = useSettingsStore.getState()
+    
+    // Apply theme
+    applyTheme(settings.theme)
+    
+    // Apply accent color
+    document.documentElement.style.setProperty('--color-accent', settings.accentColor)
+    
+    // Apply font size
+    const fontSizes = { small: '90%', medium: '100%', large: '110%', extraLarge: '120%' }
+    document.documentElement.style.fontSize = fontSizes[settings.fontSize]
+    
+    // Apply compact mode
+    document.body.classList.toggle('compact-mode', settings.compactMode)
+    
+    // Listen for system theme changes if auto mode
+    if (settings.theme === 'auto') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const handler = (e) => {
+        useDarkStore.setState({ isDark: e.matches })
+      }
+      mediaQuery.addEventListener('change', handler)
+      return () => mediaQuery.removeEventListener('change', handler)
+    }
+  }, [])
+
+  // Helper function to apply theme
+  const applyTheme = (theme) => {
+    if (theme === 'auto') {
+      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+      useDarkStore.setState({ isDark: isDarkMode })
+    } else {
+      useDarkStore.setState({ isDark: theme === 'dark' })
+    }
+  }
+
+  // Load test helper in development
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      import('./test-notifications.js').catch(() => {})
+    }
+  }, [])
 
   // Initial loading state
   useEffect(() => {
@@ -79,9 +119,19 @@ export default function App() {
           />
         )
       case 'Day':
-        return <PlaceholderView label="Day" />
+        return (
+          <DayView
+            onEventClick={openEdit}
+            onSlotClick={(date, time) => openAdd(date, time)}
+          />
+        )
       case 'Month':
-        return <PlaceholderView label="Month" />
+        return (
+          <MonthView
+            onEventClick={openEdit}
+            onSlotClick={(date, time) => openAdd(date, time)}
+          />
+        )
       default:
         return null
     }
@@ -108,6 +158,7 @@ export default function App() {
               setActiveView={setActiveView}
               onAddEvent={() => openAdd()}
               onWhatsAppSettings={() => setWhatsappSettingsOpen(true)}
+              onSettings={() => setSettingsOpen(true)}
             />
             <div className="flex-1 min-w-0 min-h-0 overflow-hidden bg-main dark:bg-[#1a1a2e] flex flex-col">
               {renderView()}
@@ -124,6 +175,11 @@ export default function App() {
             editEvent={modal.event}
             defaultDate={modal.date}
             defaultTime={modal.time}
+          />
+
+          <SettingsModal
+            isOpen={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
           />
 
           <WhatsAppSettings 

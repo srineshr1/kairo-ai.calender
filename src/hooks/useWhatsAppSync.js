@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useChatStore } from '../store/useChatStore'
 import { useEventStore } from '../store/useEventStore'
+import { useNotificationStore } from '../store/useNotificationStore'
+import { getEvents, clearEvents, WhatsAppBridgeError } from '../api/whatsappClient'
+import { DEFAULT_POLL_INTERVAL } from '../lib/constants'
 
-const BRIDGE_URL = import.meta.env.VITE_BRIDGE_URL || 'http://localhost:3001'
-const POLL_INTERVAL = parseInt(import.meta.env.VITE_POLL_INTERVAL || '3000', 10)
+const POLL_INTERVAL = parseInt(import.meta.env.VITE_POLL_INTERVAL || String(DEFAULT_POLL_INTERVAL), 10)
 
 const genId = () => 'e' + Date.now() + Math.random().toString(36).slice(2, 6)
 
 export function useWhatsAppSync() {
   const { addMessage } = useChatStore()
   const { addEvent } = useEventStore()
+  const { addNotification } = useNotificationStore()
   
   const [isConnected, setIsConnected] = useState(false)
   const [lastSyncedEvents, setLastSyncedEvents] = useState([])
@@ -22,38 +25,9 @@ export function useWhatsAppSync() {
     pollingRef.current = true
 
     try {
-      // Add timeout to fetch request
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
-
-      const res = await fetch(`${BRIDGE_URL}/events`, {
-        signal: controller.signal
-      })
-      clearTimeout(timeoutId)
-      
-      if (!res.ok) {
-        setIsConnected(false)
-        console.warn(`WhatsApp bridge returned HTTP ${res.status}: ${res.statusText}`)
-        return
-      }
-
+      // Use whatsappClient abstraction layer
+      const events = await getEvents()
       setIsConnected(true)
-      
-      // Parse JSON safely
-      let events
-      try {
-        events = await res.json()
-      } catch (parseErr) {
-        console.error('Failed to parse WhatsApp bridge response:', parseErr)
-        setIsConnected(false)
-        return
-      }
-
-      // Validate events is an array
-      if (!Array.isArray(events)) {
-        console.error('WhatsApp bridge returned non-array response:', events)
-        return
-      }
 
       if (events.length > 0) {
         const newEvents = []
@@ -107,9 +81,16 @@ export function useWhatsAppSync() {
           setLastSyncedEvents(newEvents)
           setSyncCount(c => c + newEvents.length)
           
+          // Add notification for successful sync
+          addNotification({
+            type: 'whatsapp',
+            title: 'WhatsApp Sync Complete',
+            message: `Added ${newEvents.length} event${newEvents.length > 1 ? 's' : ''} from your groups`,
+          })
+          
           // Clear processed events from bridge
           try {
-            await fetch(`${BRIDGE_URL}/events`, { method: 'DELETE' })
+            await clearEvents()
           } catch (deleteErr) {
             console.warn('Failed to clear WhatsApp events from bridge:', deleteErr)
             // Don't set disconnected - this is not critical
@@ -117,14 +98,20 @@ export function useWhatsAppSync() {
         }
       }
     } catch (err) {
-      if (err.name === 'AbortError') {
-        console.warn('WhatsApp sync timed out')
-      } else if (err.message.includes('Failed to fetch')) {
-        console.warn('WhatsApp bridge not reachable. Is it running?')
+      setIsConnected(false)
+      
+      // Log errors appropriately based on type
+      if (err instanceof WhatsAppBridgeError) {
+        if (err.message.includes('timed out')) {
+          console.warn('WhatsApp sync timed out')
+        } else if (err.message.includes('not reachable')) {
+          console.warn('WhatsApp bridge not reachable. Is it running?')
+        } else {
+          console.error('WhatsApp sync error:', err.message)
+        }
       } else {
         console.error('WhatsApp sync error:', err)
       }
-      setIsConnected(false)
     } finally {
       pollingRef.current = false
     }

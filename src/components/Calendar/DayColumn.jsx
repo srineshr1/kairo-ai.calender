@@ -1,10 +1,9 @@
 import React from 'react'
 import { useDroppable } from '@dnd-kit/core'
-import EventBlock from './EventBlock'
+import { useDarkStore } from '../../store/useDarkStore'
 import { fmtDate, isToday, timeToMinutes } from '../../lib/dateUtils'
-
-const PX_PER_HOUR = 60
-const TOTAL_HOURS = 24 // full 24hr clock
+import { PX_PER_HOUR, TOTAL_HOURS, SNAP_INTERVAL_MINUTES, DEFAULT_EVENT_DURATION } from '../../lib/constants'
+import EventBlock from './EventBlock'
 
 export default function DayColumn({ date, events, searchQuery, onEventClick, onSlotClick, awakeStart, awakeEnd }) {
   const dateStr = fmtDate(date)
@@ -90,7 +89,7 @@ export default function DayColumn({ date, events, searchQuery, onEventClick, onS
         const mins = timeToMinutes(ev.time)
         if (mins < 0 || mins >= TOTAL_HOURS * 60) return null
         const topPx = (mins / 60) * PX_PER_HOUR
-        const heightPx = ((ev.duration || 60) / 60) * PX_PER_HOUR - 4
+          const heightPx = ((ev.duration || DEFAULT_EVENT_DURATION) / 60) * PX_PER_HOUR - 4
         const dimmed = !!searchQuery && !ev.title.toLowerCase().includes(searchQuery.toLowerCase())
         return (
           <EventBlock
