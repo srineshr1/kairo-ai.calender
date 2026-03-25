@@ -87,6 +87,7 @@ function initUserDir(userId) {
     'groups.json': '[]',
     'watched-groups.json': '[]',
     'group-activity.json': '{}',
+    'incoming-messages.json': '[]',
     'status.json': JSON.stringify({ connected: false, qr: null, message: 'Disconnected' })
   }
   

@@ -12,9 +12,16 @@ const {
   initUserDir,
   userDirExists
 } = require('./utils/userData')
+const { processIncomingMessage } = require('./whatsappProcessor')
 
 const app = express()
 const PORT = process.env.BRIDGE_PORT || 3001
+
+sessionManager.setMessageHandler((userId, message) => {
+  processIncomingMessage(userId, message).catch((err) => {
+    console.error(`[Processor] Failed to process message for ${userId}:`, err.message)
+  })
+})
 
 // CORS Configuration
 const allowedOrigins = [
@@ -170,14 +177,14 @@ app.post('/users/:userId/connect', validateUserParam, async (req, res) => {
 })
 
 /**
- * Disconnect user's WhatsApp
+ * Disconnect user's WhatsApp (temporary - preserves credentials)
  * POST /users/:userId/disconnect
  */
 app.post('/users/:userId/disconnect', validateUserParam, async (req, res) => {
   const { userId } = req.params
   
   try {
-    await sessionManager.destroySession(userId, false)
+    await sessionManager.destroySession(userId, false, false) // Don't logout
     res.json({ 
       success: true,
       message: 'Disconnected successfully'
@@ -185,6 +192,25 @@ app.post('/users/:userId/disconnect', validateUserParam, async (req, res) => {
   } catch (err) {
     console.error('[Disconnect] Error:', err.message)
     res.status(500).json({ error: 'Failed to disconnect' })
+  }
+})
+
+/**
+ * Logout user's WhatsApp (permanent - deletes credentials)
+ * POST /users/:userId/logout
+ */
+app.post('/users/:userId/logout', validateUserParam, async (req, res) => {
+  const { userId } = req.params
+  
+  try {
+    await sessionManager.destroySession(userId, false, true) // Logout and delete auth
+    res.json({ 
+      success: true,
+      message: 'Logged out successfully'
+    })
+  } catch (err) {
+    console.error('[Logout] Error:', err.message)
+    res.status(500).json({ error: 'Failed to logout' })
   }
 })
 
@@ -274,6 +300,22 @@ app.get('/users/:userId/events', validateUserParam, (req, res) => {
     res.json(events)
   } catch (err) {
     console.error('[Events] Error:', err.message)
+    res.json([])
+  }
+})
+
+/**
+ * Get recent incoming messages for debugging/validation
+ * GET /users/:userId/messages
+ */
+app.get('/users/:userId/messages', validateUserParam, (req, res) => {
+  const { userId } = req.params
+
+  try {
+    const messages = readUserFile(userId, 'incoming-messages.json') || []
+    res.json(messages)
+  } catch (err) {
+    console.error('[Messages] Error:', err.message)
     res.json([])
   }
 })

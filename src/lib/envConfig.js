@@ -50,8 +50,8 @@ export const getEnvConfig = () => {
       url: import.meta.env.VITE_SUPABASE_URL,
       anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
     },
-    ollama: {
-      url: import.meta.env.VITE_OLLAMA_URL || 'http://localhost:11434',
+    groq: {
+      hasApiKey: !!import.meta.env.VITE_GROQ_API_KEY,
     },
     bridge: {
       url: import.meta.env.VITE_BRIDGE_URL || 'http://localhost:3001',

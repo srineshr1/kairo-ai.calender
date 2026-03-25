@@ -123,7 +123,7 @@ export default function PWAInstallPrompt() {
         </div>
         <div className="flex-1 min-w-0">
           <h3 className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Install my.calendar
+            Install kairo
           </h3>
           <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Add to home screen for a better experience

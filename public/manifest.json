@@ -1,6 +1,6 @@
 {
-  "name": "my.calendar - AI-Powered Calendar",
-  "short_name": "my.calendar",
+  "name": "kairo - AI-Powered Calendar",
+  "short_name": "kairo",
   "description": "Smart calendar app with AI assistant and WhatsApp integration",
   "start_url": "/",
   "display": "standalone",

@@ -60,16 +60,14 @@ function ChatMessage({ msg, isDark }) {
   )
 }
 
-export default function ChatSidebar() {
-  const { messages, isTyping, isOnline, model, setModel } = useChatStore()
+export default function ChatSidebar({ onClose }) {
+  const { messages, isTyping, isOnline } = useChatStore()
   const { isDark } = useDarkStore()
   const { send } = useLLM()
   const [input, setInput] = useState('')
-  const [modelDraft, setModelDraft] = useState(model)
   const [sending, setSending] = useState(false)
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
-  const modelInputId = useId()
   const chatRegionId = useId()
 
   useEffect(() => {
@@ -106,43 +104,33 @@ export default function ChatSidebar() {
 
   return (
     <aside 
-      className={`w-80 min-w-[320px] flex-shrink-0 border-l flex flex-col ${
+      className={`w-80 min-w-[320px] flex-shrink-0 border flex flex-col rounded-2xl shadow-2xl overflow-hidden ${
         isDark ? 'bg-chat border-white/[0.07]' : 'bg-white border-gray-200'
       }`}
       role="complementary"
       aria-label="AI chat assistant"
     >
       {/* Header */}
-      <header className={`px-4 pt-7 pb-4 border-b flex-shrink-0 ${isDark ? 'border-white/[0.07]' : 'border-gray-200'}`}>
-        <div className="flex items-center gap-2 mb-4">
+      <header className={`px-4 pt-4 pb-3 border-b flex-shrink-0 flex items-center justify-between ${isDark ? 'border-white/[0.07]' : 'border-gray-200'}`}>
+        <div className="flex items-center gap-2">
           <span 
-            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineDot}`} 
+            className={`w-2 h-2 rounded-full flex-shrink-0 ${onlineDot}`} 
             role="status"
             aria-label={`AI assistant status: ${onlineStatus}`}
           />
-          <span className={`font-display text-[22px] tracking-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>ai.assistant</span>
+          <span className={`font-display text-[18px] tracking-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>AI</span>
         </div>
-        <div className="flex gap-2">
-          <label htmlFor={modelInputId} className="sr-only">AI model name</label>
-          <input
-            id={modelInputId}
-            className={`flex-1 border rounded-lg px-3 py-1.5 text-xs font-mono outline-none focus:border-accent/50 transition-colors ${
-              isDark ? 'bg-white/[0.07] border-white/10 text-gray-200' : 'bg-gray-100 border-gray-200 text-gray-700'
-            }`}
-            value={modelDraft}
-            onChange={(e) => setModelDraft(e.target.value)}
-            placeholder="model name…"
-            aria-describedby={`${modelInputId}-hint`}
-          />
-          <span id={`${modelInputId}-hint`} className="sr-only">Enter the name of the AI model to use</span>
+        {onClose && (
           <button
-            className="bg-accent hover:bg-accent/90 transition-all text-white text-xs rounded-lg px-3.5 py-1.5 font-medium shadow-sm"
-            onClick={() => setModel(modelDraft)}
-            aria-label="Apply model change"
+            onClick={onClose}
+            className={`p-1.5 rounded-lg hover:bg-accent/20 transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+            aria-label="Close chat"
           >
-            Apply
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
-        </div>
+        )}
       </header>
 
       {/* Messages */}

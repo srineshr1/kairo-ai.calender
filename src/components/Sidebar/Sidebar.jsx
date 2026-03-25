@@ -41,7 +41,7 @@ export default function Sidebar({ onAddEvent }) {
     >
       {/* Logo */}
       <div className="px-5 pt-7 pb-5 flex items-center justify-between flex-shrink-0">
-        <span className={`font-display text-[22px] tracking-tight ${isDark ? 'text-gray-100' : 'text-light-text'}`} aria-hidden="true">my.calendar</span>
+        <span className={`font-display text-[22px] tracking-tight ${isDark ? 'text-gray-100' : 'text-light-text'}`} aria-hidden="true">kairo</span>
       </div>
 
       {/* Today section */}

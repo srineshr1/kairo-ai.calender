@@ -167,7 +167,7 @@ function createClient() {
           return
         }
 
-        log('  🔍 Relevant! Sending to Ollama...', 'info')
+        log('  🔍 Relevant! Sending to Groq...', 'info')
         events = await analyzeText(text, groupName)
       }
 

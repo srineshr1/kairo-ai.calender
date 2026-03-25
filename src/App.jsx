@@ -58,6 +58,9 @@ function CalendarApp() {
     toggleSidebar,
     toggleChat
   } = useMobileLayout()
+
+  // Desktop floating chat state
+  const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false)
   
   // Navigate to day view
   const navigateToDay = (date) => {
@@ -249,7 +252,7 @@ function CalendarApp() {
               onWhatsAppSettings={() => setWhatsappSettingsOpen(true)}
               onSettings={() => setSettingsOpen(true)}
               onMenuClick={isMobile ? toggleSidebar : undefined}
-              onChatClick={isMobile ? toggleChat : undefined}
+              onChatClick={() => setIsFloatingChatOpen(v => !v)}
               isMobile={isMobile}
             />
             <div className="flex-1 min-w-0 min-h-0 overflow-hidden bg-light-card dark:bg-[#1a1a2e] flex flex-col">
@@ -257,10 +260,25 @@ function CalendarApp() {
             </div>
           </main>
 
-          {/* Desktop chat sidebar - hidden on mobile */}
-          <div className="flex-shrink-0 hidden lg:block">
-            <ChatSidebar />
-          </div>
+          {/* Desktop floating chat toggle button */}
+          {!isMobile && !isFloatingChatOpen && (
+            <button
+              onClick={() => setIsFloatingChatOpen(true)}
+              className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-accent shadow-lg hover:bg-accent/90 transition-all flex items-center justify-center z-40"
+              aria-label="Open AI chat"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+            </button>
+          )}
+
+          {/* Desktop floating chat - shown when open */}
+          {!isMobile && isFloatingChatOpen && (
+            <div className="fixed bottom-6 right-6 z-40">
+              <ChatSidebar onClose={() => setIsFloatingChatOpen(false)} />
+            </div>
+          )}
 
           {/* Mobile chat drawer */}
           {isMobile && (
@@ -270,7 +288,7 @@ function CalendarApp() {
               side="right"
               title="AI Assistant"
             >
-              <ChatSidebar />
+              <ChatSidebar onClose={closePanel} />
             </MobileDrawer>
           )}
 

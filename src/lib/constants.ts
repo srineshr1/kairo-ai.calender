@@ -73,11 +73,6 @@ export const MAX_EVENT_DURATION = 1440
 // ===========================
 
 /**
- * Default Ollama server URL
- */
-export const DEFAULT_OLLAMA_URL = 'http://localhost:11434'
-
-/**
  * Default WhatsApp bridge server URL
  */
 export const DEFAULT_BRIDGE_URL = 'http://localhost:3001'

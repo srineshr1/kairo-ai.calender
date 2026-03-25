@@ -1,4 +1,4 @@
-# my.calendar
+# kairo
 
 An intelligent calendar application that combines traditional calendar management with AI-powered features and WhatsApp integration. Designed primarily for college students to automatically extract and manage schedule information from WhatsApp group messages.
 
@@ -98,7 +98,7 @@ An intelligent calendar application that combines traditional calendar managemen
 
 1. **Clone the repository**
    ```bash
-   cd ai-calendar
+   cd kairo
    ```
 
 2. **Install frontend dependencies**
@@ -202,7 +202,7 @@ An intelligent calendar application that combines traditional calendar managemen
 ## Project Structure
 
 ```
-ai-calendar/
+kairo/
 ├── src/
 │   ├── api/                    # NEW: API abstraction layer
 │   │   ├── ollamaClient.js     # Centralized Ollama API calls

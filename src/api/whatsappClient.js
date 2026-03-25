@@ -273,7 +273,7 @@ export async function connectWhatsApp() {
 }
 
 /**
- * Disconnect user's WhatsApp
+ * Disconnect user's WhatsApp (temporary - preserves credentials for reconnection)
  * @returns {Promise<void>}
  */
 export async function disconnectWhatsApp() {
@@ -298,6 +298,35 @@ export async function disconnectWhatsApp() {
   } catch (err) {
     if (err instanceof WhatsAppBridgeError) throw err
     throw new WhatsAppBridgeError('Failed to disconnect WhatsApp', null, err)
+  }
+}
+
+/**
+ * Logout user's WhatsApp (permanent - deletes credentials)
+ * @returns {Promise<void>}
+ */
+export async function logoutWhatsApp() {
+  const userId = getCurrentUserId()
+  if (!userId) throw new WhatsAppBridgeError('User ID not set', null, null)
+  
+  try {
+    const res = await fetchWithTimeout(
+      `${BRIDGE_URL}/users/${userId}/logout`,
+      { method: 'POST' }
+    )
+    
+    if (!res.ok) {
+      throw new WhatsAppBridgeError(
+        `Failed to logout: HTTP ${res.status}`,
+        res.status,
+        null
+      )
+    }
+    
+    return await res.json()
+  } catch (err) {
+    if (err instanceof WhatsAppBridgeError) throw err
+    throw new WhatsAppBridgeError('Failed to logout from WhatsApp', null, err)
   }
 }
 
@@ -517,6 +546,33 @@ export async function getGroupActivity() {
   } catch (err) {
     if (err instanceof WhatsAppBridgeError) throw err
     throw new WhatsAppBridgeError('Failed to get group activity', null, err)
+  }
+}
+
+/**
+ * Get recent incoming WhatsApp messages for validation view
+ * @returns {Promise<Array>} Recent message records
+ */
+export async function getRecentMessages() {
+  const userId = getCurrentUserId()
+  if (!userId) throw new WhatsAppBridgeError('User ID not set', null, null)
+
+  try {
+    const res = await fetchWithTimeout(`${BRIDGE_URL}/users/${userId}/messages`)
+
+    if (!res.ok) {
+      throw new WhatsAppBridgeError(
+        `Failed to get recent messages: HTTP ${res.status}`,
+        res.status,
+        null
+      )
+    }
+
+    const messages = await res.json()
+    return Array.isArray(messages) ? messages : []
+  } catch (err) {
+    if (err instanceof WhatsAppBridgeError) throw err
+    throw new WhatsAppBridgeError('Failed to get recent messages', null, err)
   }
 }
 
