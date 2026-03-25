@@ -144,6 +144,11 @@ function areEqual(prevProps, nextProps) {
   ) {
     return false
   }
+
+  // Check getEventOpacity reference (from useCallback in WeekView)
+  if (prevProps.getEventOpacity !== nextProps.getEventOpacity) {
+    return false
+  }
   
   // Check events array (shallow comparison of ids and key properties)
   if (prevProps.events.length !== nextProps.events.length) return false

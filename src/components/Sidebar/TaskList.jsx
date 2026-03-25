@@ -1,9 +1,23 @@
 import React, { useRef } from 'react'
-import { useEventStore, getTaskStatus, STATUS_STYLES_LIGHT, STATUS_STYLES_DARK } from '../../store/useEventStore.ts'
+import { useEventStore, getTaskStatus } from '../../store/useEventStore'
 import { useDarkStore } from '../../store/useDarkStore'
 import { isSameMonth } from 'date-fns'
 import { parseDate } from '../../lib/dateUtils'
 import { Icon } from '../Icons'
+
+const STATUS_STYLES_LIGHT = {
+  done: { label: 'Done', pill: 'bg-green-100 text-green-700 border-green-300' },
+  upcoming: { label: 'Upcoming', pill: 'bg-blue-100 text-blue-700 border-blue-300' },
+  overdue: { label: 'Overdue', pill: 'bg-red-100 text-red-700 border-red-300' },
+  cancelled: { label: 'Cancelled', pill: 'bg-gray-100 text-gray-600 border-gray-300' },
+}
+
+const STATUS_STYLES_DARK = {
+  done: { label: 'Done', pill: 'bg-green-900/40 text-green-400 border-green-700/40' },
+  upcoming: { label: 'Upcoming', pill: 'bg-blue-900/40 text-blue-400 border-blue-700/40' },
+  overdue: { label: 'Overdue', pill: 'bg-red-900/40 text-red-400 border-red-700/40' },
+  cancelled: { label: 'Cancelled', pill: 'bg-gray-800/60 text-gray-500 border-gray-700/40' },
+}
 
 export default function TaskList({ onAdd }) {
   const { events, markDone, cancelEvent } = useEventStore()

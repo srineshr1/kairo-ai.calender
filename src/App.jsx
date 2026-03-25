@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar/Sidebar'
 import TopBar from './components/Calendar/TopBar'
@@ -44,6 +44,9 @@ function CalendarApp() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const { user, authEnabled } = useAuth()
   const supabase = getSupabaseClient()
+
+  // Track whether we've applied the initial default view from settings
+  const hasAppliedDefaultView = useRef(false)
   
   // Mobile layout state
   const { 
@@ -127,7 +130,8 @@ function CalendarApp() {
   // Enable notification triggers
   useNotificationTriggers()
 
-  // Apply all settings whenever they change
+  // Apply theme/visual settings (colors, fonts, compact mode) whenever they change
+  // NOTE: defaultView is intentionally excluded here — it's only applied once on mount
   useEffect(() => {
     const themePresets = {
       royal: {
@@ -286,17 +290,25 @@ function CalendarApp() {
     
     // Apply compact mode
     document.body.classList.toggle('compact-mode', settings.compactMode)
-    
-    // Set default view from settings
-    setActiveView(settings.defaultView === 'day' ? 'Day' : settings.defaultView === 'month' ? 'Month' : 'Week')
   }, [
     isDark,
     settings.accentColor,
     settings.themePreset,
     settings.fontSize,
     settings.compactMode,
-    settings.defaultView,
   ])
+
+  // Apply defaultView only once on initial mount (or when user explicitly changes it in settings)
+  useEffect(() => {
+    if (!hasAppliedDefaultView.current) {
+      hasAppliedDefaultView.current = true
+      setActiveView(
+        settings.defaultView === 'day' ? 'Day'
+        : settings.defaultView === 'month' ? 'Month'
+        : 'Week'
+      )
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Apply dark mode class to html element
   useEffect(() => {
