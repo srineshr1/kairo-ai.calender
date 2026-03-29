@@ -2,16 +2,24 @@
  * Groq API Client
  * Centralized client for interacting with the Groq LLM API.
  * Uses OpenAI-compatible chat completions endpoint.
+ * Can proxy through bridge server to hide API key.
  */
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY
+const BRIDGE_URL = import.meta.env.VITE_BRIDGE_URL || ''
+const USE_BRIDGE_PROXY = import.meta.env.VITE_USE_BRIDGE_PROXY === 'true'
 const REQUEST_TIMEOUT = 30000 // 30 seconds
 const MAX_RETRIES = 3
 const BASE_RETRY_DELAY = 1000 // 1 second
 
 // Status codes that are safe to retry
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504]
+
+// Get current user ID from session storage
+function getCurrentUserId() {
+  return sessionStorage.getItem('bridge_user_id')
+}
 
 /**
  * Custom error class for Groq API errors
@@ -111,17 +119,20 @@ export async function generateText({
   maxTokens = 1000,
   retries = MAX_RETRIES
 }) {
-  // Validate API key
-  if (!GROQ_API_KEY) {
+  // Determine if we should use bridge proxy
+  const useProxy = USE_BRIDGE_PROXY && BRIDGE_URL && getCurrentUserId()
+  
+  // Validate - either proxy or direct API key
+  if (!useProxy && !GROQ_API_KEY) {
     throw new GroqError(
-      'VITE_GROQ_API_KEY is not configured. Please add it to your .env file.',
+      'AI service not configured. Set VITE_USE_BRIDGE_PROXY=true or add VITE_GROQ_API_KEY to your .env file.',
       null,
       null
     )
   }
 
   // Validate required parameters
-  if (!model) {
+  if (!model && !useProxy) {
     throw new GroqError('Model name is required', null, null)
   }
   
@@ -133,20 +144,25 @@ export async function generateText({
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      // Use bridge proxy if enabled
+      const url = useProxy 
+        ? `${BRIDGE_URL}/users/${getCurrentUserId()}/chat`
+        : GROQ_API_URL
+      
+      const headers = useProxy
+        ? { 'Content-Type': 'application/json' }
+        : { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' }
+      
+      const body = useProxy
+        ? JSON.stringify({ model, messages, temperature, maxTokens })
+        : JSON.stringify({ model, messages, temperature, max_tokens: maxTokens })
+      
       const res = await fetchWithTimeout(
-        GROQ_API_URL,
+        url,
         {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model,
-            messages,
-            temperature,
-            max_tokens: maxTokens
-          })
+          headers,
+          body
         },
         REQUEST_TIMEOUT
       )
@@ -163,7 +179,7 @@ export async function generateText({
         // Non-retryable errors - throw immediately
         if (res.status === 401) {
           throw new GroqError(
-            'Invalid Groq API key. Please check VITE_GROQ_API_KEY in your .env file.',
+            useProxy ? 'AI service authentication failed' : 'Invalid Groq API key. Please check configuration.',
             401,
             null
           )

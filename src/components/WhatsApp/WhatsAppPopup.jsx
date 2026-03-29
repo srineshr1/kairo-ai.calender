@@ -104,7 +104,7 @@ export default function WhatsAppPopup({ onClose }) {
     try {
       const userId = getCurrentUserId()
       if (!userId) {
-        setError('Please sign in to connect WhatsApp')
+        setError('WhatsApp not registered. Please refresh the page.')
         setIsLoadingInitial(false)
         return
       }

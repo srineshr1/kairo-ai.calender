@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar/Sidebar'
 import TopBar from './components/Calendar/TopBar'
@@ -16,10 +16,6 @@ import OfflineIndicator from './components/OfflineIndicator'
 import MobileNav from './components/MobileNav'
 import MobileDrawer from './components/MobileDrawer'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import ForgotPassword from './pages/ForgotPassword'
-import AuthCallback from './pages/AuthCallback'
 import { useWhatsAppSync } from './hooks/useWhatsAppSync'
 import { useNotificationTriggers } from './hooks/useNotificationTriggers'
 import { useMobileLayout } from './hooks/useMobileLayout'
@@ -28,6 +24,11 @@ import { useDarkStore } from './store/useDarkStore'
 import { useSettingsStore } from './store/useSettingsStore'
 import { useChatStore } from './store/useChatStore'
 import { useAuth } from './contexts/AuthContext'
+
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 import getSupabaseClient from './lib/supabase'
 
 function CalendarApp() {
@@ -482,25 +483,27 @@ export default function App() {
   const { authEnabled } = useAuth()
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      
-      {/* Protected routes */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <CalendarApp />
-          </ProtectedRoute>
-        }
-      />
-      
-      {/* Catch all - redirect to home */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen bg-light-bg dark:bg-sidebar">Loading...</div>}>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        
+        {/* Protected routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <CalendarApp />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Catch all - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   )
 }

@@ -26,6 +26,11 @@ export const AuthProvider = ({ children }) => {
    * This ensures every user has bridge credentials
    */
   const ensureBridgeRegistration = async (userId) => {
+    if (!userId) {
+      console.warn('[Auth] No user ID provided for bridge registration')
+      return null
+    }
+    
     try {
       console.log('[Auth] Registering user with WhatsApp bridge:', userId)
       const result = await registerWithBridge(userId)
@@ -35,6 +40,11 @@ export const AuthProvider = ({ children }) => {
       console.error('[Auth] Failed to register with bridge:', error.message)
       // Don't throw - bridge connection is optional
       // User can still use calendar without WhatsApp integration
+      // But warn about it
+      if (import.meta.env.DEV) {
+        console.warn('[Auth] WhatsApp bridge not available - some features may not work')
+      }
+      return null
     }
   }
 

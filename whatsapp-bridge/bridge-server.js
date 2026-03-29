@@ -3,6 +3,7 @@ const cors = require('cors')
 const rateLimit = require('express-rate-limit')
 const { ipKeyGenerator } = require('express-rate-limit')
 const crypto = require('crypto')
+const axios = require('axios')
 require('dotenv').config()
 
 const { bridgeAuthMiddleware, validateUserParam, getOrCreateApiKey } = require('./middleware/bridgeAuth')
@@ -45,6 +46,7 @@ const allowedOrigins = [
   'http://localhost:5175',
   'http://localhost:5176',
   'http://localhost:5177',
+  'https://kairo.srinesh.in',
 ]
 
 if (process.env.ALLOWED_ORIGINS) {
@@ -112,7 +114,17 @@ app.post('/register', async (req, res) => {
   try {
     const { userId } = req.body
     
+    console.log('[Register] Request received for userId:', userId)
+    
+    if (!userId) {
+      return res.status(400).json({
+        error: 'Invalid user ID',
+        message: 'userId is required'
+      })
+    }
+    
     if (!isValidUserId(userId)) {
+      console.log('[Register] Invalid userId format:', userId)
       return res.status(400).json({
         error: 'Invalid user ID',
         message: 'userId must match /^[a-zA-Z0-9_-]{1,128}$/'
@@ -121,12 +133,16 @@ app.post('/register', async (req, res) => {
     
     // Initialize user directory
     if (!userDirExists(userId)) {
+      console.log('[Register] Creating user directory for:', userId)
       initUserDir(userId)
+    } else {
+      console.log('[Register] User directory exists for:', userId)
     }
     
     // Generate or retrieve API key
     const apiKey = getOrCreateApiKey(userId)
     
+    console.log('[Register] Registration successful for:', userId)
     res.json({ 
       success: true,
       userId,
@@ -134,7 +150,7 @@ app.post('/register', async (req, res) => {
       message: 'User registered successfully'
     })
   } catch (err) {
-    console.error('[Register] Error:', err.message)
+    console.error('[Register] Error:', err.message, err.stack)
     res.status(500).json({ error: 'Failed to register user', message: err.message })
   }
 })
@@ -454,6 +470,73 @@ app.get('/admin/sessions', requireAdmin, (req, res) => {
       lastSeen: new Date(s.lastSeen).toISOString()
     }))
   })
+})
+
+// ============================================================================
+// GROQ API PROXY (for frontend chat)
+// ============================================================================
+
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
+const GROQ_API_KEY = process.env.GROQ_API_KEY
+
+const groqLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  keyGenerator: (req) => req.userId || ipKeyGenerator(req.ip),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests to AI service' }
+})
+
+app.post('/users/:userId/chat', validateUserParam, groqLimiter, async (req, res) => {
+  const { userId } = req.params
+  
+  if (!GROQ_API_KEY) {
+    return res.status(503).json({
+      error: 'AI service not configured',
+      message: 'GROQ_API_KEY not set on server'
+    })
+  }
+
+  const { model, messages, temperature, maxTokens } = req.body
+
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({
+      error: 'Invalid request',
+      message: 'messages array is required'
+    })
+  }
+
+  try {
+    const response = await axios.post(GROQ_API_URL, {
+      model: model || 'llama-3.3-70b-versatile',
+      messages,
+      temperature: temperature ?? 0.1,
+      max_tokens: maxTokens ?? 1000
+    }, {
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    })
+
+    res.json(response.data)
+  } catch (err) {
+    console.error(`[Groq] Error for ${userId}:`, err.message)
+    
+    if (err.response) {
+      return res.status(err.response.status).json({
+        error: 'Groq API error',
+        message: err.response.data?.error?.message || 'AI service error'
+      })
+    }
+    
+    res.status(500).json({
+      error: 'AI service error',
+      message: err.message
+    })
+  }
 })
 
 // ============================================================================

@@ -180,22 +180,39 @@ async function fetchWithTimeout(url, options = {}, timeout = DEFAULT_TIMEOUT, sk
       
       if (err.name === 'AbortError') {
         throw new WhatsAppBridgeError(
-          `Request timed out after ${timeout}ms`,
+          `Request timed out after ${timeout}ms - Bridge server is slow or not responding`,
           null,
           err
         )
       }
       
-      if (err.message.includes('Failed to fetch')) {
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        const bridgeUrl = BRIDGE_URL || `${window.location.origin}`
+        let hint = ''
+        if (err.message.includes('ERR_NAME_NOT_RESOLVED')) {
+          hint = `DNS lookup failed for bridge server. Check if '${bridgeUrl}' is the correct address.`
+        } else if (err.message.includes('ERR_CONNECTION_REFUSED')) {
+          hint = `Connection refused. Is the bridge server running at '${bridgeUrl}'?`
+        } else if (err.message.includes('ERR_CONNECTION_RESET')) {
+          hint = 'Connection was reset by the bridge server.'
+        } else if (err.message.includes('CORS') || err.message.includes('cors')) {
+          hint = 'CORS error. Check if bridge server allows requests from this origin.'
+        } else {
+          hint = `Cannot reach bridge server at '${bridgeUrl}'. Is it running?`
+        }
+        throw new WhatsAppBridgeError(hint, null, err)
+      }
+      
+      if (err.message.includes('TypeError') && err.message.includes('fetch')) {
         throw new WhatsAppBridgeError(
-          'WhatsApp bridge not reachable. Is it running?',
+          `Bridge server unreachable. Check if it's running and '${BRIDGE_URL || window.location.origin}' is correct.`,
           null,
           err
         )
       }
       
       throw new WhatsAppBridgeError(
-        err.message || 'Unknown error connecting to WhatsApp bridge',
+        `Bridge connection error: ${err.message}`,
         null,
         err
       )
@@ -212,9 +229,16 @@ async function fetchWithTimeout(url, options = {}, timeout = DEFAULT_TIMEOUT, sk
  * @returns {Promise<{userId: string, apiKey: string}>} Registration result
  */
 export async function registerWithBridge(userId) {
+  if (!userId) {
+    throw new WhatsAppBridgeError('User ID is required', null, null)
+  }
+  
   try {
+    const url = BRIDGE_URL ? `${BRIDGE_URL}/register` : '/register'
+    console.log('[WhatsApp] Registering with bridge:', url, 'userId:', userId)
+    
     const res = await fetchWithTimeout(
-      `${BRIDGE_URL}/register`,
+      url,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -225,20 +249,34 @@ export async function registerWithBridge(userId) {
     )
     
     if (!res.ok) {
-      throw new WhatsAppBridgeError(
-        `Registration failed: HTTP ${res.status}`,
-        res.status,
-        null
-      )
+      let errorMsg = `Registration failed: HTTP ${res.status}`
+      try {
+        const errorData = await res.json()
+        errorMsg = errorData.message || errorData.error || errorMsg
+      } catch {}
+      
+      if (res.status === 400) {
+        errorMsg = `Invalid request: ${errorMsg}`
+      } else if (res.status === 401 || res.status === 403) {
+        errorMsg = `Authentication failed: ${errorMsg}`
+      } else if (res.status === 404) {
+        errorMsg = `Bridge endpoint not found. Check if bridge server is up to date.`
+      } else if (res.status >= 500) {
+        errorMsg = `Bridge server error: ${errorMsg}`
+      }
+      
+      throw new WhatsAppBridgeError(errorMsg, res.status, null)
     }
     
     const data = await res.json()
+    console.log('[WhatsApp] Registration successful:', data)
     
     // Store credentials
     setBridgeCredentials(userId, data.apiKey)
     
     return data
   } catch (err) {
+    console.error('[WhatsApp] Registration failed:', err)
     if (err instanceof WhatsAppBridgeError) {
       throw err
     }
@@ -339,17 +377,24 @@ export async function logoutWhatsApp() {
  */
 export async function getStatus() {
   const userId = getCurrentUserId()
-  if (!userId) throw new WhatsAppBridgeError('User ID not set', null, null)
+  if (!userId) {
+    throw new WhatsAppBridgeError(
+      'WhatsApp bridge not registered. Please refresh the page or sign out and sign back in.',
+      null,
+      null
+    )
+  }
   
   try {
     const res = await fetchWithTimeout(`${BRIDGE_URL}/users/${userId}/status`)
     
     if (!res.ok) {
-      throw new WhatsAppBridgeError(
-        `Bridge returned HTTP ${res.status}: ${res.statusText}`,
-        res.status,
-        null
-      )
+      let errorMsg = `Bridge returned HTTP ${res.status}`
+      try {
+        const errorData = await res.json()
+        errorMsg = errorData.message || errorData.error || errorMsg
+      } catch {}
+      throw new WhatsAppBridgeError(errorMsg, res.status, null)
     }
 
     const data = await res.json()
@@ -364,7 +409,7 @@ export async function getStatus() {
     }
   } catch (err) {
     if (err instanceof WhatsAppBridgeError) throw err
-    throw new WhatsAppBridgeError('Failed to get status from bridge', null, err)
+    throw new WhatsAppBridgeError(`Failed to get WhatsApp status: ${err.message}`, null, err)
   }
 }
 
