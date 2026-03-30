@@ -226,6 +226,7 @@ module.exports = {
   setMessageHandler,
   getClient,
   startSession,
+  createSession: startSession,
   logoutSession,
   getSessionState,
   hasSession,

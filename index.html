@@ -4,14 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Content Security Policy -->
-    <!-- ⚠️ IMPORTANT: After deploying bridge, add its URL to connect-src -->
-    <!-- Example: connect-src ... https://your-bridge.railway.app -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval';
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com;
-      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://api.groq.com https://api.groq.ai;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://api.groq.com https://api.groq.ai https://kairo-production-d76b.up.railway.app wss://kairo-production-d76b.up.railway.app https://ned-hardhearted-leandra.ngrok-free.dev wss://ned-hardhearted-leandra.ngrok-free.dev;
       img-src 'self' data: blob:;
       base-uri 'self';
       form-action 'self';

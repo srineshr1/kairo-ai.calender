@@ -18,7 +18,7 @@ const {
 const { processIncomingMessage } = require('./whatsappProcessor')
 
 const app = express()
-const PORT = process.env.BRIDGE_PORT || 3001
+const PORT = process.env.PORT || process.env.BRIDGE_PORT || 3001
 const ADMIN_API_KEY = process.env.BRIDGE_ADMIN_API_KEY || ''
 
 function secureCompare(a, b) {
@@ -587,7 +587,7 @@ process.on('SIGTERM', async () => {
 })
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log('')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('  📡 Multi-Tenant WhatsApp Bridge Server')

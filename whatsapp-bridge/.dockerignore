@@ -1,0 +1,6 @@
+*.tar
+*.tar.gz
+node_modules/
+.env
+dist/
+.cache/

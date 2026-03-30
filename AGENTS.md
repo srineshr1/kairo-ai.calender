@@ -78,12 +78,14 @@ npx tsc --noEmit         # Check types without emitting
 - Component files should be `.jsx` extension
 
 ### Theming & Dark Mode
-Dark mode is enabled via `class` on the html element. Use CSS variables for theme-aware colors:
-```jsx
-// Light mode: use 'theme-text-primary', 'theme-bg', etc.
-// Dark mode: CSS vars like 'var(--color-accent)' are defined in :root
-// Custom colors in tailwind.config.js: sidebar, chat, accent, event-*
-```
+Dark mode is enabled via `class` on the html element. Use Tailwind color classes directly:
+- **Backgrounds**: `main` (light), `light-bg`, `light-card`, `sidebar`, `sidebar-deep`, `sidebar-card`, `chat`
+- **Text**: `light-text`, `light-text-secondary`
+- **Accents**: `accent`, `accent-light`
+- **Event colors**: `event-pink`, `event-green`, `event-blue`, `event-amber`, `event-gray`
+- **Chat-specific**: `chat-msg-user`, `chat-msg-ai`, `chat-input`
+
+Custom fonts: `DM Sans` (sans), `DM Serif Display` (display)
 
 ### Accessibility
 - Use `announce()` from `@/lib/accessibility` for screen reader announcements
@@ -144,18 +146,18 @@ vi.mock('../../../store/useEventStore', () => ({
 - Handle offline with `pendingSync` queue (see `useEventStore`)
 - Use optimistic UI updates for better UX (update UI immediately, sync to DB in background)
 
-### Tailwind CSS
-- Custom colors defined in `tailwind.config.js` (sidebar, chat, accent, event colors)
-- Use `darkMode: 'class'` - dark mode via `class` on html element
-- Mobile-first responsive design
-- Custom fonts: `DM Sans` (sans), `DM Serif Display` (display)
-- Event colors: `event-pink`, `event-green`, `event-blue`, `event-amber`, `event-gray`
-
 ## Environment Configuration
 
 - Environment variables in `.env` (see `.env.example`)
 - Use `import.meta.env.VITE_*` for client-side variables
 - Use `@/lib/envConfig` for runtime env configuration with validation
+
+## WhatsApp Bridge Server
+
+The `whatsapp-bridge/` directory contains a Node.js server for WhatsApp integration:
+- Uses `whatsapp-web.js` for WhatsApp Web protocol
+- Runs separately from the main Vite dev server
+- Requires separate environment configuration
 
 ## Pre-commit Checks
 
