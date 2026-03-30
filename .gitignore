@@ -30,7 +30,9 @@ whatsapp-bridge/.env
 .wwebjs_cache/
 whatsapp-bridge/.wwebjs_auth/
 whatsapp-bridge/.wwebjs_cache/
+# Don't ignore sessions/manager.js (source code)
 whatsapp-bridge/sessions/
+!whatsapp-bridge/sessions/manager.js
 events-queue.json
 .wwebjs_auth
 .wwebjs_cache
