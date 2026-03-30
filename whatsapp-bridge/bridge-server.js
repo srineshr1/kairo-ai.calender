@@ -86,6 +86,22 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' }
 })
 
+// CORS headers middleware - must be before routes
+app.use((req, res, next) => {
+  const origin = req.headers.origin
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin)
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id, X-API-Key')
+  res.header('Access-Control-Allow-Credentials', 'true')
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+  next()
+})
+
 app.use(cors(corsOptions))
 app.use(express.json({ limit: '10mb' }))
 app.use(limiter)
@@ -101,7 +117,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Multi-tenant WhatsApp Bridge is running',
-    activeSessions: sessionManager.getAllSessions().length,
+    activeSessions: sessionManager.getActiveSessions().length,
     timestamp: new Date().toISOString()
   })
 })
@@ -460,7 +476,7 @@ app.get('/users/:userId/group-activity', validateUserParam, (req, res) => {
  * GET /admin/sessions
  */
 app.get('/admin/sessions', requireAdmin, (req, res) => {
-  const sessions = sessionManager.getAllSessions()
+  const sessions = sessionManager.getActiveSessions()
   res.json({
     count: sessions.length,
     sessions: sessions.map(s => ({
