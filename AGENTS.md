@@ -47,15 +47,17 @@ npx tsc --noEmit         # Check types without emitting
 - **Strict TypeScript** is enabled (`strict: true` in tsconfig.json)
 - Enable all strict checks: `noUnusedLocals`, `noUnusedParameters`, `noUncheckedIndexedAccess`
 - Use **JSDoc comments** for exported functions and complex logic (see `src/lib/validation.js` and `src/lib/constants.ts`)
-- Prefer **`.tsx`** for React components, **`.ts`** for utilities/hooks/types
+- Prefer **`.jsx`** for React components with UI, **`.tsx`** when using TypeScript generics/typing
+- Use **`.ts`** for utilities, hooks, and type definitions
 - Use **interface** for object shapes, **type** for unions and primitives
 - Use **const** for constants, **let** only when reassignment is needed
 
 ### Imports
 - React imports: `import React, { useState, useEffect } from 'react'`
 - Path aliases: Use `@/*` instead of relative paths (e.g., `import { fmtDate } from '@/lib/dateUtils'`)
-- Group imports order: React → libraries → local imports
+- Group imports order: React → external libraries → internal modules (separated by blank lines)
 - Side effect imports (like setupTests) should be at the top
+- Use `import type { TypeName }` for type-only imports when appropriate
 
 ### Naming Conventions
 | Type | Convention | Example |
@@ -82,6 +84,12 @@ Dark mode is enabled via `class` on the html element. Use CSS variables for them
 // Dark mode: CSS vars like 'var(--color-accent)' are defined in :root
 // Custom colors in tailwind.config.js: sidebar, chat, accent, event-*
 ```
+
+### Accessibility
+- Use `announce()` from `@/lib/accessibility` for screen reader announcements
+- Implement focus trapping in modals with `createFocusTrap()` from `@/lib/accessibility`
+- Use ARIA attributes: `role`, `aria-modal`, `aria-labelledby`, `aria-describedby`, `aria-required`
+- Keyboard navigation support required for all interactive elements
 
 ### State Management (Zustand)
 ```javascript
@@ -132,8 +140,9 @@ vi.mock('../../../store/useEventStore', () => ({
 ### API Patterns (Supabase)
 - Use the **supabase client** from `@/lib/supabase`
 - Always include `user_id` filter for security: `.eq('user_id', userId)`
-- Real-time subscriptions use Supabase channel pattern
+- Real-time subscriptions use Supabase channel pattern with `supabase.channel()` and `postgres_changes`
 - Handle offline with `pendingSync` queue (see `useEventStore`)
+- Use optimistic UI updates for better UX (update UI immediately, sync to DB in background)
 
 ### Tailwind CSS
 - Custom colors defined in `tailwind.config.js` (sidebar, chat, accent, event colors)
