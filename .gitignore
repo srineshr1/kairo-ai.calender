@@ -42,8 +42,11 @@ whatsapp-session.json
 bridge-middleware/
 
 # Dynamic Data
-whatsapp-bridge/public/bridge-status.json
-whatsapp-bridge/public/groups.json
+whatsapp-bridge/public/
+events-queue.json
+whatsapp-bridge/events-queue.json
+whatsapp-bridge/public/events-queue.json
+whatsapp-bridge/config/api-keys.json
 
 # Generated Assets
 whatsapp-qr-*.png
