@@ -191,7 +191,7 @@ See the complete [Setup Guide](SETUP.md) for local development instructions.
 **Quick Start:**
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/kairo.git
+git clone https://github.com/srineshr1/kairo.git
 cd kairo && npm install
 
 # Configure environment
