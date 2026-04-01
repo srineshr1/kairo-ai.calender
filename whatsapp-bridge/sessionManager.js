@@ -7,7 +7,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js')
 const fs = require('fs')
 const path = require('path')
 
-const { initUserDir, getUserAuthDir, getUserPublicDir, getAllUserIds, sanitizeUserId } = require('./utils/userData')
+const { initUserDir, getUserAuthDir, getUserPublicDir, getAllUserIds, sanitizeUserId, writeUserFile, readUserFile } = require('./utils/userData')
 
 const sessions = new Map()
 let messageHandler = null
@@ -97,9 +97,52 @@ function getClient(userId) {
     console.log(`[SessionManager] QR generated for ${userId}`)
   })
   
-  client.on('ready', () => {
+  client.on('authenticated', () => {
+    // Fires immediately when user scans QR - before 'ready'
+    console.log(`[SessionManager] Client authenticated for ${userId}`)
+    updateUserStatus(userId, { connected: false, qr: null, message: 'Authenticated, loading...' })
+  })
+  
+  client.on('ready', async () => {
     console.log(`[SessionManager] Client ready for ${userId}`)
     updateUserStatus(userId, { connected: true, qr: null, message: 'Connected' })
+    
+    // Fetch all chats and save groups/contacts
+    try {
+      const chats = await client.getChats()
+      const activity = readUserFile(userId, 'group-activity.json') || {}
+      
+      // Filter groups (isGroup = true)
+      const groups = chats
+        .filter(chat => chat.isGroup)
+        .map(chat => ({
+          id: chat.id._serialized,
+          name: chat.name || 'Unknown Group',
+          participantCount: chat.participants?.length || 0,
+          isGroup: true,
+          messageCount: activity[chat.id._serialized] || 0
+        }))
+        .sort((a, b) => b.messageCount - a.messageCount) // Sort by activity
+      
+      // Filter individual chats (not group, not broadcast)
+      const contacts = chats
+        .filter(chat => !chat.isGroup && !chat.isBroadcast)
+        .map(chat => ({
+          id: chat.id._serialized,
+          name: chat.name || chat.id.user || 'Unknown',
+          isGroup: false,
+          messageCount: activity[chat.id._serialized] || 0
+        }))
+        .sort((a, b) => b.messageCount - a.messageCount) // Sort by activity
+      
+      // Save to files
+      writeUserFile(userId, 'groups.json', groups)
+      writeUserFile(userId, 'contacts.json', contacts)
+      
+      console.log(`[SessionManager] Loaded ${groups.length} groups and ${contacts.length} contacts for ${userId}`)
+    } catch (err) {
+      console.error(`[SessionManager] Failed to fetch chats for ${userId}:`, err.message)
+    }
   })
   
   client.on('disconnected', (reason) => {

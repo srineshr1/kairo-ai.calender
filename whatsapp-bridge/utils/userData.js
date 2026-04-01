@@ -85,6 +85,7 @@ function initUserDir(userId) {
   const files = {
     'events.json': '[]',
     'groups.json': '[]',
+    'contacts.json': '[]',
     'watched-groups.json': '[]',
     'group-activity.json': '{}',
     'incoming-messages.json': '[]',

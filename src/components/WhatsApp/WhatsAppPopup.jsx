@@ -8,6 +8,7 @@ import {
   logoutWhatsApp,
   getStatus,
   getGroups,
+  getContacts,
   getWatchedGroups,
   setWatchedGroups,
   getCurrentUserId,
@@ -47,15 +48,32 @@ export default function WhatsAppPopup({ onClose }) {
   const [statusMessage, setStatusMessage] = useState('Not connected')
 
   const [groups, setGroups] = useState([])
+  const [contacts, setContacts] = useState([])
   const [watchedGroupIds, setWatchedGroupIds] = useState([])
   const [recentMessages, setRecentMessages] = useState([])
   const [isSavingGroup, setIsSavingGroup] = useState(false)
 
   const [error, setError] = useState(null)
   const [view, setView] = useState('groups')
+  const [showAddPopup, setShowAddPopup] = useState(false)
+  const [addPopupTab, setAddPopupTab] = useState('groups')
+  const [isLoadingAdd, setIsLoadingAdd] = useState(false)
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
+  const addPopupRef = useRef(null)
 
   const meta = useMemo(() => statusMeta(sessionStatus, isConnected), [sessionStatus, isConnected])
+
+  // Close add popup when clicking outside
+  useEffect(() => {
+    if (!showAddPopup) return
+    const handleClickOutsideAdd = (e) => {
+      if (addPopupRef.current && !addPopupRef.current.contains(e.target)) {
+        setShowAddPopup(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutsideAdd)
+    return () => document.removeEventListener('mousedown', handleClickOutsideAdd)
+  }, [showAddPopup])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -83,13 +101,71 @@ export default function WhatsAppPopup({ onClose }) {
   const fetchGroups = async ({ silent = false } = {}) => {
     if (!silent) setIsRefreshingGroups(true)
     try {
-      const [fetchedGroups, watched] = await Promise.all([getGroups(), getWatchedGroups()])
+      const [fetchedGroups, fetchedContacts, watched] = await Promise.all([
+        getGroups(), 
+        getContacts(),
+        getWatchedGroups()
+      ])
       setGroups(fetchedGroups)
+      setContacts(fetchedContacts)
       setWatchedGroupIds(watched.map((g) => g.id))
     } catch (err) {
       setError(err.message)
     } finally {
       if (!silent) setIsRefreshingGroups(false)
+    }
+  }
+
+  const handleOpenAddPopup = async () => {
+    setShowAddPopup(true)
+    setIsLoadingAdd(true)
+    try {
+      const [fetchedGroups, fetchedContacts] = await Promise.all([getGroups(), getContacts()])
+      setGroups(fetchedGroups)
+      setContacts(fetchedContacts)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsLoadingAdd(false)
+    }
+  }
+
+  const handleAddItem = async (item) => {
+    if (isSavingGroup || watchedGroupIds.includes(item.id)) return
+    
+    const nextIds = [...watchedGroupIds, item.id]
+    setWatchedGroupIds(nextIds)
+    setIsSavingGroup(true)
+    
+    try {
+      // Combine groups and contacts that are being watched
+      const allItems = [...groups, ...contacts]
+      const watchedItems = allItems.filter((g) => nextIds.includes(g.id))
+      await setWatchedGroups(watchedItems)
+    } catch (err) {
+      setError(err.message)
+      setWatchedGroupIds(watchedGroupIds)
+    } finally {
+      setIsSavingGroup(false)
+    }
+  }
+
+  const handleRemoveItem = async (itemId) => {
+    if (isSavingGroup) return
+    
+    const nextIds = watchedGroupIds.filter((id) => id !== itemId)
+    setWatchedGroupIds(nextIds)
+    setIsSavingGroup(true)
+    
+    try {
+      const allItems = [...groups, ...contacts]
+      const watchedItems = allItems.filter((g) => nextIds.includes(g.id))
+      await setWatchedGroups(watchedItems)
+    } catch (err) {
+      setError(err.message)
+      setWatchedGroupIds(watchedGroupIds)
+    } finally {
+      setIsSavingGroup(false)
     }
   }
 
@@ -146,6 +222,11 @@ export default function WhatsAppPopup({ onClose }) {
 
   useEffect(() => {
     fetchStatus()
+    
+    // Poll faster (1s) when waiting for QR scan, slower (5s) when connected
+    const isWaitingForScan = qrCode || connecting
+    const pollInterval = isWaitingForScan ? 1000 : 5000
+    
     const interval = setInterval(() => {
       // Only poll status when needed
       if (!isConnected || qrCode || connecting) {
@@ -154,7 +235,7 @@ export default function WhatsAppPopup({ onClose }) {
       if (isConnected) {
         fetchMessages({ silent: true })
       }
-    }, 5000)
+    }, pollInterval)
 
     return () => clearInterval(interval)
   }, [isConnected, qrCode, connecting])
@@ -264,25 +345,6 @@ export default function WhatsAppPopup({ onClose }) {
       setError(err.message)
     } finally {
       setConnecting(false)
-    }
-  }
-
-  const handleGroupToggle = async (groupId) => {
-    if (isSavingGroup) return
-    const nextIds = watchedGroupIds.includes(groupId)
-      ? watchedGroupIds.filter((id) => id !== groupId)
-      : [...watchedGroupIds, groupId]
-
-    setWatchedGroupIds(nextIds)
-    setIsSavingGroup(true)
-    try {
-      const watchedGroups = groups.filter((g) => nextIds.includes(g.id))
-      await setWatchedGroups(watchedGroups)
-    } catch (err) {
-      setError(err.message)
-      setWatchedGroupIds(watchedGroupIds)
-    } finally {
-      setIsSavingGroup(false)
     }
   }
 
@@ -410,46 +472,202 @@ export default function WhatsAppPopup({ onClose }) {
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-xs font-semibold">
                       {watchedGroupIds.length > 0 
-                        ? `Watching ${watchedGroupIds.length} group${watchedGroupIds.length === 1 ? '' : 's'}`
-                        : 'Select groups to monitor'
+                        ? `Watching ${watchedGroupIds.length} item${watchedGroupIds.length === 1 ? '' : 's'}`
+                        : 'No groups or chats monitored'
                       }
                     </p>
                     <button
-                      onClick={() => fetchGroups()}
-                      disabled={isRefreshingGroups}
-                      className="text-xs px-3 py-1.5 rounded-lg theme-control press-feedback disabled:opacity-50"
+                      onClick={handleOpenAddPopup}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20BD5A] text-white transition-colors"
                     >
-                      {isRefreshingGroups ? 'Refreshing...' : 'Refresh'}
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add
                     </button>
                   </div>
 
-                  {isLoadingInitial ? (
-                    <div className={`text-xs ${subClass}`}>Loading groups...</div>
-                  ) : groups.length === 0 ? (
+                  {watchedGroupIds.length === 0 ? (
                     <div className="text-center py-6">
                       <p className={`text-xs ${subClass}`}>
-                        No groups found. Add groups or contacts in WhatsApp to monitor them for upcoming events and tasks.
+                        Click "Add" to select groups or contacts to monitor for upcoming events and tasks.
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-72 overflow-y-auto">
-                      {groups.map((group) => (
-                        <label key={group.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/20 dark:hover:bg-white/10 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={watchedGroupIds.includes(group.id)}
-                            onChange={() => handleGroupToggle(group.id)}
-                            disabled={isSavingGroup}
-                            className="w-4 h-4 rounded accent-[#25D366]"
-                          />
+                      {/* Show watched groups */}
+                      {groups.filter(g => watchedGroupIds.includes(g.id)).map((group) => (
+                        <div key={group.id} className="flex items-center gap-3 p-2 rounded-lg glass-subtle">
+                          <div className="w-8 h-8 rounded-full bg-[#25D366]/20 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-4 h-4 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-6 8c0-2.67 5.33-4 6-4s6 1.33 6 4v1H6v-1zm12-8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1s-.45 1-1 1h-4c-.55 0-1-.45-1-1z"/>
+                            </svg>
+                          </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-medium truncate">{group.name}</p>
-                            <p className={`text-xs ${subClass}`}>{group.participantCount} members · {group.messageCount || 0} msgs</p>
+                            <p className={`text-[10px] ${subClass}`}>
+                              {group.participantCount || 0} members · {group.messageCount || 0} msgs
+                            </p>
                           </div>
-                        </label>
+                          <button
+                            onClick={() => handleRemoveItem(group.id)}
+                            disabled={isSavingGroup}
+                            className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50"
+                            title="Remove from monitoring"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                      {/* Show watched contacts */}
+                      {contacts.filter(c => watchedGroupIds.includes(c.id)).map((contact) => (
+                        <div key={contact.id} className="flex items-center gap-3 p-2 rounded-lg glass-subtle">
+                          <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium truncate">{contact.name}</p>
+                            <p className={`text-[10px] ${subClass}`}>
+                              Contact · {contact.messageCount || 0} msgs
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveItem(contact.id)}
+                            disabled={isSavingGroup}
+                            className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50"
+                            title="Remove from monitoring"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Add Groups/Contacts Popup */}
+              {showAddPopup && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                  <div 
+                    ref={addPopupRef}
+                    className={`w-80 max-h-[70vh] rounded-2xl ${panelClass} shadow-2xl flex flex-col`}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-[color:var(--theme-border)]">
+                      <h3 className="text-sm font-semibold">Add to monitor</h3>
+                      <button
+                        onClick={() => setShowAddPopup(false)}
+                        className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex gap-2 p-3 border-b border-[color:var(--theme-border)]">
+                      {['groups', 'chats'].map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setAddPopupTab(tab)}
+                          className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
+                            addPopupTab === tab
+                              ? 'bg-[#25D366] text-white'
+                              : 'glass-subtle theme-text-secondary hover:theme-text-primary'
+                          }`}
+                        >
+                          {tab === 'groups' ? `Groups (${groups.length})` : `Chats (${contacts.length})`}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto p-3">
+                      {isLoadingAdd ? (
+                        <div className="flex items-center justify-center py-8">
+                          <LoadingSpinner size="sm" />
+                        </div>
+                      ) : addPopupTab === 'groups' ? (
+                        groups.length === 0 ? (
+                          <p className={`text-xs text-center py-4 ${subClass}`}>No groups found</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {groups
+                              .filter(g => !watchedGroupIds.includes(g.id))
+                              .map((group) => (
+                                <button
+                                  key={group.id}
+                                  onClick={() => handleAddItem(group)}
+                                  disabled={isSavingGroup}
+                                  className="w-full flex items-center gap-3 p-2.5 rounded-lg glass-subtle hover:bg-white/10 transition-colors text-left disabled:opacity-50"
+                                >
+                                  <div className="w-8 h-8 rounded-full bg-[#25D366]/20 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-4 h-4 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-6 8c0-2.67 5.33-4 6-4s6 1.33 6 4v1H6v-1zm12-8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1s-.45 1-1 1h-4c-.55 0-1-.45-1-1z"/>
+                                    </svg>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-medium truncate">{group.name}</p>
+                                    <p className={`text-[10px] ${subClass}`}>
+                                      {group.participantCount || 0} members · {group.messageCount || 0} msgs
+                                    </p>
+                                  </div>
+                                  <svg className="w-4 h-4 text-[#25D366] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                  </svg>
+                                </button>
+                              ))}
+                            {groups.filter(g => !watchedGroupIds.includes(g.id)).length === 0 && (
+                              <p className={`text-xs text-center py-4 ${subClass}`}>All groups are being monitored</p>
+                            )}
+                          </div>
+                        )
+                      ) : (
+                        contacts.length === 0 ? (
+                          <p className={`text-xs text-center py-4 ${subClass}`}>No chats found</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {contacts
+                              .filter(c => !watchedGroupIds.includes(c.id))
+                              .map((contact) => (
+                                <button
+                                  key={contact.id}
+                                  onClick={() => handleAddItem(contact)}
+                                  disabled={isSavingGroup}
+                                  className="w-full flex items-center gap-3 p-2.5 rounded-lg glass-subtle hover:bg-white/10 transition-colors text-left disabled:opacity-50"
+                                >
+                                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-medium truncate">{contact.name}</p>
+                                    <p className={`text-[10px] ${subClass}`}>
+                                      {contact.messageCount || 0} messages
+                                    </p>
+                                  </div>
+                                  <svg className="w-4 h-4 text-[#25D366] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                  </svg>
+                                </button>
+                              ))}
+                            {contacts.filter(c => !watchedGroupIds.includes(c.id)).length === 0 && (
+                              <p className={`text-xs text-center py-4 ${subClass}`}>All chats are being monitored</p>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 

@@ -450,6 +450,42 @@ export async function getGroups() {
 }
 
 /**
+ * Get user's WhatsApp contacts (individual chats)
+ * @returns {Promise<Array>} Array of contact objects sorted by message activity
+ */
+export async function getContacts() {
+  const userId = getCurrentUserId()
+  if (!userId) throw new WhatsAppBridgeError('User ID not set', null, null)
+  
+  try {
+    const res = await fetchWithTimeout(`${BRIDGE_URL}/users/${userId}/contacts`)
+    
+    if (!res.ok) {
+      throw new WhatsAppBridgeError(
+        `Bridge returned HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        null
+      )
+    }
+
+    const contacts = await res.json()
+    
+    if (!Array.isArray(contacts)) {
+      throw new WhatsAppBridgeError(
+        'Bridge returned non-array response for contacts',
+        null,
+        null
+      )
+    }
+
+    return contacts
+  } catch (err) {
+    if (err instanceof WhatsAppBridgeError) throw err
+    throw new WhatsAppBridgeError('Failed to get contacts from bridge', null, err)
+  }
+}
+
+/**
  * Get user's watched groups
  * @returns {Promise<Array>} Array of watched group objects
  */

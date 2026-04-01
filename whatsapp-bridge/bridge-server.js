@@ -354,6 +354,32 @@ app.get('/users/:userId/groups', validateUserParam, (req, res) => {
 })
 
 /**
+ * Get user's WhatsApp contacts (individual chats)
+ * GET /users/:userId/contacts
+ */
+app.get('/users/:userId/contacts', validateUserParam, (req, res) => {
+  const { userId } = req.params
+  
+  try {
+    const contacts = readUserFile(userId, 'contacts.json') || []
+    const activity = readUserFile(userId, 'group-activity.json') || {}
+    
+    // Enhance contacts with activity data and sort by message count
+    const enhancedContacts = contacts
+      .map(contact => ({
+        ...contact,
+        messageCount: activity[contact.id] || contact.messageCount || 0
+      }))
+      .sort((a, b) => b.messageCount - a.messageCount)
+    
+    res.json(enhancedContacts)
+  } catch (err) {
+    console.error('[Contacts] Error:', err.message)
+    res.status(500).json({ error: 'Failed to load contacts' })
+  }
+})
+
+/**
  * Get user's watched groups
  * GET /users/:userId/watched-groups
  */
