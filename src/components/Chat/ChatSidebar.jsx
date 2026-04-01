@@ -18,12 +18,14 @@ function ChatMessage({ msg }) {
   if (msg.role === 'system') {
     return (
       <div 
-        className="py-3 border-b border-[color:var(--theme-border)]"
+        className="py-3"
         role="status"
         aria-live="polite"
       >
-        <div className="text-center text-xs leading-relaxed theme-text-secondary">
-          {msg.text}
+        <div className="flex justify-center">
+          <div className="px-3 py-1.5 rounded-full glass-subtle text-center text-xs leading-relaxed theme-text-secondary">
+            {msg.text}
+          </div>
         </div>
       </div>
     )
@@ -32,11 +34,11 @@ function ChatMessage({ msg }) {
   if (msg.role === 'user') {
     return (
       <article 
-        className="py-3 border-b border-[color:var(--theme-border)] animate-fadeUp"
+        className="py-2"
         aria-label="Your message"
       >
-            <div className="flex flex-col items-end">
-          <div className="max-w-[85%] border-l-2 border-accent/40 pl-3">
+        <div className="flex flex-col items-end">
+          <div className="max-w-[82%] rounded-2xl px-4 py-2.5 glass-subtle border border-accent/30 bg-accent/5 shadow-sm">
             <div className="text-[13px] leading-relaxed font-sans theme-text-primary">
               {msg.text}
             </div>
@@ -48,13 +50,24 @@ function ChatMessage({ msg }) {
   
   return (
     <article 
-      className="py-3 border-b border-[color:var(--theme-border)] animate-fadeUp"
+      className="py-2"
       aria-label="AI response"
     >
-      <div className="flex flex-col">
-        <div className="text-[9.5px] font-semibold text-accent uppercase tracking-widest mb-1.5" aria-hidden="true">AI</div>
-        <div className="text-[13px] leading-relaxed font-sans theme-text-primary" style={{ whiteSpace: 'pre-wrap' }}>
-          {msg.text}
+      <div className="flex gap-2.5 items-start">
+        {/* AI Avatar */}
+        <div 
+          className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5"
+          aria-hidden="true"
+        >
+          <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 16l.394 1.183a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" />
+          </svg>
+        </div>
+        {/* Message Bubble */}
+        <div className="flex-1 max-w-[82%] rounded-2xl px-4 py-2.5 glass-subtle shadow-sm">
+          <div className="text-[13px] leading-relaxed font-sans theme-text-primary" style={{ whiteSpace: 'pre-wrap' }}>
+            {msg.text}
+          </div>
         </div>
       </div>
     </article>
@@ -79,6 +92,8 @@ export default function ChatSidebar({ onClose }) {
   const startY = useRef(0)
   const startWidth = useRef(0)
   const startHeight = useRef(0)
+  const prevMessageCountRef = useRef(0)
+  const prevTypingRef = useRef(false)
 
   const handleMouseMove = (e) => {
     if (isResizing) return
@@ -143,7 +158,17 @@ export default function ChatSidebar({ onClose }) {
   }, [isResizing, resizeEdge])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Only auto-scroll when a new message is added or typing status changes
+    const currentMessageCount = messages.length
+    const messageAdded = currentMessageCount > prevMessageCountRef.current
+    const typingStarted = isTyping && !prevTypingRef.current
+    
+    if (messageAdded || typingStarted) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+    
+    prevMessageCountRef.current = currentMessageCount
+    prevTypingRef.current = isTyping
   }, [messages, isTyping])
 
   const handleSend = async () => {
@@ -254,9 +279,22 @@ export default function ChatSidebar({ onClose }) {
       >
         {messages.map((m) => <ChatMessage key={m.id} msg={m} />)}
         {isTyping && (
-          <div className="py-3 border-b border-[color:var(--theme-border)] animate-fadeUp">
-            <div className="text-[9.5px] font-semibold text-accent uppercase tracking-widest mb-1.5" aria-hidden="true">AI</div>
-            <TypingDots />
+          <div className="py-2">
+            <div className="flex gap-2.5 items-start">
+              {/* AI Avatar */}
+              <div 
+                className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5"
+                aria-hidden="true"
+              >
+                <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 16l.394 1.183a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" />
+                </svg>
+              </div>
+              {/* Typing indicator */}
+              <div className="rounded-2xl px-4 py-2.5 glass-subtle shadow-sm">
+                <TypingDots />
+              </div>
+            </div>
           </div>
         )}
         <div ref={bottomRef} />
