@@ -321,59 +321,89 @@ export default function WhatsAppPopup({ onClose }) {
             </div>
           )}
 
-            <div className={`rounded-xl border p-3 ${cardClass}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold">Connection status</p>
-                <p className={`text-xs mt-1 ${subClass}`}>{statusMessage}</p>
-              </div>
-              {!isConnected ? (
-                qrCode ? (
-                  <button
-                    onClick={handleStop}
-                    disabled={connecting}
-                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-red-500 hover:bg-red-600 text-white disabled:opacity-50"
-                  >
-                    {connecting ? 'Stopping...' : 'Stop'}
-                  </button>
-                ) : (
+            <div className={`rounded-xl border p-4 ${cardClass}`}>
+            {/* Show different layouts based on QR code presence */}
+            {!qrCode ? (
+              // Normal status view (no QR code)
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold">Connection status</p>
+                  <p className={`text-xs mt-1 ${subClass}`}>{statusMessage}</p>
+                </div>
+                {!isConnected ? (
                   <button
                     onClick={handleConnect}
                     disabled={connecting}
-                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white disabled:opacity-50"
+                    className="px-4 py-2.5 rounded-lg text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white disabled:opacity-50 transition-colors"
                   >
-                    {connecting ? 'Connecting...' : 'Scan QR code to connect'}
+                    {connecting ? 'Connecting...' : 'Connect WhatsApp'}
                   </button>
-                )
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleDisconnect}
-                    disabled={connecting}
-                    className={`px-3 py-2 rounded-lg text-xs font-semibold ${isDark ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'} disabled:opacity-50`}
-                    title="Disconnect temporarily (can reconnect without QR)"
-                  >
-                    {connecting ? 'Disconnecting...' : 'Disconnect'}
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    disabled={connecting}
-                    className={`px-3 py-2 rounded-lg text-xs font-semibold ${isDark ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'bg-red-50 text-red-600 hover:bg-red-100'} disabled:opacity-50`}
-                    title="Logout permanently (requires QR scan to reconnect)"
-                  >
-                    Logout
-                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDisconnect}
+                      disabled={connecting}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold ${isDark ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'} disabled:opacity-50`}
+                      title="Disconnect temporarily (can reconnect without QR)"
+                    >
+                      {connecting ? 'Disconnecting...' : 'Disconnect'}
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      disabled={connecting}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold ${isDark ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'bg-red-50 text-red-600 hover:bg-red-100'} disabled:opacity-50`}
+                      title="Logout permanently (requires QR scan to reconnect)"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // QR Code view - Full width, centered, clean
+              <div className="text-center">
+                <h4 className="text-sm font-semibold mb-1">Connect WhatsApp</h4>
+                <p className={`text-xs ${subClass} mb-5`}>
+                  Open WhatsApp on your phone → Settings → Linked Devices → Link a Device
+                </p>
+                
+                {/* QR Code - Large and centered */}
+                <div className="bg-white rounded-2xl p-6 inline-block shadow-lg">
+                  <QRCodeSVG 
+                    value={qrCode} 
+                    size={200}
+                    level="M" 
+                    includeMargin={false}
+                    bgColor="#ffffff" 
+                    fgColor="#000000" 
+                  />
                 </div>
-              )}
-            </div>
-
-            {!!qrCode && !isConnected && (
-               <div className="mt-3 pt-3 border-t border-dashed border-[color:var(--theme-border)] text-center">
-                <p className={`text-xs mb-2 ${subClass}`}>Scan QR code (attempt {qrAttempts}/{maxQrAttempts})</p>
-                <div className="bg-white p-3 rounded-xl inline-block mb-2">
-                  <QRCodeSVG value={qrCode} size={150} level="M" includeMargin bgColor="#ffffff" fgColor="#000000" />
+                
+                {/* Timer & Attempt Info */}
+                <div className="mt-4 space-y-2">
+                  <p className={`text-xs font-medium ${subClass}`}>
+                    Scan with WhatsApp mobile app
+                  </p>
+                  <div className="flex items-center justify-center gap-3 text-[11px] theme-text-secondary">
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Expires in {qrExpiryCountdown}s
+                    </span>
+                    <span>·</span>
+                    <span>Attempt {qrAttempts}/{maxQrAttempts}</span>
+                  </div>
                 </div>
-                <p className={`text-xs ${subClass}`}>Expires in {qrExpiryCountdown}s</p>
+                
+                {/* Cancel button */}
+                <button
+                  onClick={handleStop}
+                  disabled={connecting}
+                  className="mt-4 px-4 py-2 rounded-lg text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 disabled:opacity-50 transition-colors"
+                >
+                  {connecting ? 'Stopping...' : 'Cancel'}
+                </button>
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@ export const useChatStore = create((set, get) => ({
       messages: [SYSTEM_MESSAGE],
       isTyping: false,
       isOnline: null,
+      error: null,
       model: 'llama-3.3-70b-versatile',
       supabase: null,
       userId: null,
@@ -17,6 +18,8 @@ export const useChatStore = create((set, get) => ({
       setModel: (model) => set({ model }),
       setOnline: (v) => set({ isOnline: v }),
       setTyping: (v) => set({ isTyping: v }),
+      setError: (error) => set({ error }),
+      clearError: () => set({ error: null }),
 
       initializeChat: async (supabase, userId) => {
         if (!supabase || !userId) return

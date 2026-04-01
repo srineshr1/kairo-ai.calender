@@ -58,7 +58,7 @@ function extractJSON(raw) {
 }
 
 export function useLLM() {
-  const { addMessage, setTyping, setOnline } = useChatStore()
+  const { addMessage, setTyping, setOnline, setError } = useChatStore()
   const { events, addEvent, editEvent, deleteEvent } = useEventStore()
 
   const send = async (userText) => {
@@ -158,6 +158,7 @@ CRITICAL RULES:
 
       setOnline(true)
       setTyping(false)
+      setError(null) // Clear any previous errors on success
 
       const parsed = extractJSON(raw)
 
@@ -260,33 +261,35 @@ CRITICAL RULES:
       setOnline(false)
       setTyping(false)
       
-      // Handle GroqError with specific messages
-      let errorMessage = '⚠ Could not reach AI assistant.\n\n'
+      // User-friendly error messages
+      let userMessage = ''
       
       if (err instanceof GroqError) {
-        errorMessage += err.message
-        
-        // Show appropriate toast notification
         if (err.status === 401) {
-          toast.error('Invalid Groq API key. Check your .env configuration.', 'Authentication Error')
+          userMessage = 'Cannot connect to AI assistant. Please check your API configuration in Settings.'
+          
+          // Only show toast once per session (prevent spam)
+          if (!sessionStorage.getItem('groq_auth_error_shown')) {
+            toast.error('AI authentication failed. Check your settings.', 'Connection Error')
+            sessionStorage.setItem('groq_auth_error_shown', 'true')
+          }
         } else if (err.status === 429) {
-          toast.error('Rate limit exceeded. Please try again in a moment.', 'API Limit')
+          userMessage = 'AI is rate limited. Please wait a moment and try again.'
         } else if (err.status === 400) {
-          toast.error('Invalid request. Check your parameters.', 'API Error')
+          userMessage = 'Invalid request. Please rephrase your message and try again.'
         } else if (err.message.includes('timeout')) {
-          toast.error('Request timed out. Please try again.', 'Timeout')
+          userMessage = 'Request timed out. The AI took too long to respond. Please try again.'
         } else if (err.message.includes('Failed to connect')) {
-          toast.error('Cannot connect to Groq API. Check your internet connection.', 'Connection Error')
+          userMessage = 'No internet connection. Check your network and try again.'
         } else {
-          toast.error(err.message || 'Something went wrong with the AI assistant', 'AI Error')
+          userMessage = 'Something went wrong with the AI assistant. Please try again.'
         }
       } else {
-        // Fallback for non-GroqError exceptions
-        errorMessage += `Error: ${err.message}\n\nPlease try again or check your API configuration.`
-        toast.error(err.message || 'Something went wrong with the AI assistant', 'AI Error')
+        userMessage = 'An unexpected error occurred. Please try again.'
       }
       
-      addMessage({ role: 'ai', text: errorMessage })
+      // Store error in chat store instead of adding to messages
+      setError(userMessage)
       
       // Log to console for debugging
       console.error('Groq API error:', err)

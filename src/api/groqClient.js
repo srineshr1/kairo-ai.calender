@@ -21,6 +21,11 @@ function getCurrentUserId() {
   return sessionStorage.getItem('bridge_user_id')
 }
 
+// Get current bridge API key from session storage
+function getCurrentBridgeApiKey() {
+  return sessionStorage.getItem('bridge_api_key')
+}
+
 /**
  * Custom error class for Groq API errors
  */
@@ -120,7 +125,9 @@ export async function generateText({
   retries = MAX_RETRIES
 }) {
   // Determine if we should use bridge proxy
-  const useProxy = USE_BRIDGE_PROXY && BRIDGE_URL && getCurrentUserId()
+  const bridgeUserId = getCurrentUserId()
+  const bridgeApiKey = getCurrentBridgeApiKey()
+  const useProxy = USE_BRIDGE_PROXY && BRIDGE_URL && bridgeUserId
   
   // Production hard-guard: if bridge proxy is configured, NEVER fall back to direct key
   if (USE_BRIDGE_PROXY && !BRIDGE_URL) {
@@ -140,6 +147,14 @@ export async function generateText({
     )
   }
 
+  if (useProxy && !bridgeApiKey) {
+    throw new GroqError(
+      'Bridge credentials missing. Please refresh the page or sign out and sign back in.',
+      401,
+      null
+    )
+  }
+
   // Validate required parameters
   if (!model && !useProxy) {
     throw new GroqError('Model name is required', null, null)
@@ -155,11 +170,15 @@ export async function generateText({
     try {
       // Use bridge proxy if enabled
       const url = useProxy 
-        ? `${BRIDGE_URL}/users/${getCurrentUserId()}/chat`
+        ? `${BRIDGE_URL}/users/${bridgeUserId}/chat`
         : GROQ_API_URL
       
       const headers = useProxy
-        ? { 'Content-Type': 'application/json' }
+        ? {
+            'Content-Type': 'application/json',
+            'X-User-ID': bridgeUserId,
+            'X-API-Key': bridgeApiKey,
+          }
         : { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' }
       
       const body = useProxy

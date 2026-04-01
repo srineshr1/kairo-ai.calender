@@ -62,7 +62,7 @@ function ChatMessage({ msg }) {
 }
 
 export default function ChatSidebar({ onClose }) {
-  const { messages, isTyping, isOnline } = useChatStore()
+  const { messages, isTyping, isOnline, error, clearError } = useChatStore()
   const { send } = useLLM()
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -223,6 +223,25 @@ export default function ChatSidebar({ onClose }) {
           </button>
         )}
       </header>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="mx-4 mt-3 mb-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-2.5 animate-fadeUp">
+          <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-xs text-red-400 leading-relaxed flex-1">{error}</p>
+          <button 
+            onClick={clearError} 
+            className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0 p-1"
+            aria-label="Dismiss error"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div 
