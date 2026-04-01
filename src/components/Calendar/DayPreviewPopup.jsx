@@ -1,6 +1,7 @@
 import React from 'react'
 import { format } from 'date-fns'
 import { useThemeColors } from '../../hooks/useThemeColors'
+import { fmtDate } from '../../lib/dateUtils'
 
 export default function DayPreviewPopup({ 
   date,           
@@ -8,7 +9,8 @@ export default function DayPreviewPopup({
   position,       
   onClose,        
   onEventClick,   
-  onViewDay       
+  onViewDay,
+  onSlotClick
 }) {
   const dateLabel = format(date, 'EEEE, MMMM d')
   const hasEvents = events.length > 0
@@ -59,7 +61,7 @@ export default function DayPreviewPopup({
                 No events
               </p>
               <button
-                onClick={onViewDay}
+                onClick={() => onSlotClick && onSlotClick(fmtDate(date), null)}
                 className="mt-3 px-4 py-2 rounded-lg text-[12px] font-medium transition-colors theme-control theme-text-primary"
               >
                 Add Event
@@ -105,7 +107,7 @@ export default function DayPreviewPopup({
         {/* Footer */}
         <div className="px-4 py-3 border-t border-[color:var(--theme-border)]">
           <button
-            onClick={onViewDay}
+            onClick={() => onViewDay && onViewDay(date)}
             className={`w-full px-4 py-2.5 rounded-lg text-[13px] font-medium transition-colors flex items-center justify-center gap-2 ${
               isDark
                 ? 'bg-accent hover:opacity-90 text-white'

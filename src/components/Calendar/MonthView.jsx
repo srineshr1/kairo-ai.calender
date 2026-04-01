@@ -243,6 +243,7 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
           onClose={closePopup}
           onEventClick={onEventClick}
           onViewDay={navigateToDay}
+          onSlotClick={onSlotClick}
         />
       )}
     </div>
