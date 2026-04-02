@@ -24,6 +24,7 @@ import { useDarkStore } from './store/useDarkStore'
 import { useSettingsStore } from './store/useSettingsStore'
 import { useChatStore } from './store/useChatStore'
 import { useAuth } from './contexts/AuthContext'
+import { getBlurLevel } from './lib/performanceDetection'
 
 const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
@@ -77,6 +78,10 @@ function CalendarApp() {
       
       const initializeStores = async () => {
         console.log('[App] Initializing stores for user:', user.id)
+        
+        // Detect device performance and set blur level
+        const detectedBlurLevel = getBlurLevel()
+        useSettingsStore.getState().initializeBlurSettings(detectedBlurLevel)
         
         // Load initial data
         await useEventStore.getState().initializeSupabase(supabase, user.id)
@@ -313,6 +318,12 @@ function CalendarApp() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
   }, [isDark])
+
+  // Apply blur level to html element based on settings
+  useEffect(() => {
+    const effectiveBlurLevel = settings.getEffectiveBlurLevel()
+    document.documentElement.setAttribute('data-blur-level', effectiveBlurLevel)
+  }, [settings.blurEnabled, settings.blurOverride, settings.deviceBlurLevel])
 
   // Load test helper in development (disabled - file missing)
   // useEffect(() => {

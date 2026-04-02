@@ -45,10 +45,10 @@ export default function LoadingSpinner({ size = 'md', className = '', label = 'L
  */
 export function LoadingOverlay({ message = 'Loading...' }) {
   return (
-    <div className="fixed inset-0 bg-black/30 dark:bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
-      <div className="bg-white dark:bg-[#1f1d30] rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4">
+    <div className="fixed inset-0 glass-backdrop z-50 flex items-center justify-center">
+      <div className="glass-panel glass-modal rounded-2xl p-8 flex flex-col items-center gap-4">
         <LoadingSpinner size="lg" />
-        <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">{message}</p>
+        <p className="text-sm theme-text-secondary font-medium">{message}</p>
       </div>
     </div>
   )

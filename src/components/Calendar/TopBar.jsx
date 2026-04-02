@@ -192,12 +192,7 @@ export default function TopBar({
             {showUserMenu && (
               <div 
                 ref={userMenuRef}
-                className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg border z-50" 
-                style={{
-                  backgroundColor: 'color-mix(in srgb, var(--theme-panel) 80%, transparent)',
-                  borderColor: 'color-mix(in srgb, var(--theme-border) 72%, transparent)',
-                  backdropFilter: 'blur(14px)'
-                }}
+                className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg z-50 glass-panel" 
                 role="menu"
                 aria-label="User menu"
               >

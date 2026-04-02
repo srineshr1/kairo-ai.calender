@@ -1,8 +1,22 @@
 import React from 'react'
 import { useSettingsStore } from '../../../store/useSettingsStore'
+import { getPerformanceTierName } from '../../../lib/performanceDetection'
 
 export default function AppearanceTab() {
-  const { accentColor, themePreset, compactMode, showWeekends, savingKeys, updateSetting } = useSettingsStore()
+  const { 
+    accentColor, 
+    themePreset, 
+    compactMode, 
+    showWeekends, 
+    savingKeys, 
+    updateSetting,
+    blurEnabled,
+    blurOverride,
+    deviceBlurLevel,
+    getEffectiveBlurLevel
+  } = useSettingsStore()
+
+  const effectiveBlurLevel = getEffectiveBlurLevel()
 
   const accentColors = [
     { name: 'Sapphire', value: '#3b82f6' },
@@ -18,6 +32,13 @@ export default function AppearanceTab() {
     { id: 'emerald', name: 'Emerald Gold', colors: ['#10b981', '#cda45e', '#f3fff7'] },
     { id: 'rose', name: 'Rose Graphite', colors: ['#c35e89', '#a0645f', '#fff5f7'] },
     { id: 'ocean', name: 'Ocean Steel', colors: ['#0ea5b7', '#4f7fa0', '#f1fafd'] },
+  ]
+
+  const blurOptions = [
+    { value: null, label: 'Auto', desc: `(${getPerformanceTierName(deviceBlurLevel)})` },
+    { value: 'full', label: 'Full', desc: 'Best quality' },
+    { value: 'reduced', label: 'Reduced', desc: 'Balanced' },
+    { value: 'none', label: 'Off', desc: 'Best performance' },
   ]
 
   return (
@@ -84,6 +105,70 @@ export default function AppearanceTab() {
 
         {savingKeys.accentColor && (
           <p className="text-[11px] theme-text-secondary -mt-2">Applying accent color...</p>
+        )}
+
+        <div className="h-px my-4 border-t border-[color:var(--theme-border)]" />
+
+        <div className="text-[11px] font-semibold uppercase tracking-wider mb-4 theme-text-secondary">
+          Effects
+        </div>
+
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className="text-[13px] font-medium theme-text-primary">
+              Blur Effects
+            </p>
+            <p className="text-[12px] mt-0.5 theme-text-secondary">
+              Premium glassmorphism effects
+            </p>
+          </div>
+          <button
+            onClick={() => updateSetting('blurEnabled', !blurEnabled)}
+            disabled={savingKeys.blurEnabled}
+            className={`relative w-10 h-5 rounded-full transition-colors press-feedback ${
+              blurEnabled 
+                ? 'theme-toggle-on' 
+                : 'theme-toggle'
+            }`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+              blurEnabled ? 'translate-x-5' : ''
+            }`} />
+          </button>
+        </div>
+
+        {blurEnabled && (
+          <div className="py-2">
+            <p className="text-[13px] font-medium theme-text-primary mb-2">
+              Blur Quality
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {blurOptions.map((option) => (
+                <button
+                  key={option.value ?? 'auto'}
+                  onClick={() => updateSetting('blurOverride', option.value)}
+                  disabled={savingKeys.blurOverride}
+                  className={`press-feedback p-2.5 rounded-xl border text-center transition-all theme-control ${
+                    blurOverride === option.value ? 'theme-control-active' : ''
+                  }`}
+                >
+                  <div className="text-[12px] font-semibold theme-text-primary">{option.label}</div>
+                  <div className="text-[10px] theme-text-secondary">{option.desc}</div>
+                </button>
+              ))}
+            </div>
+            {blurOverride === 'full' && deviceBlurLevel !== 'full' && (
+              <p className="text-[11px] text-amber-500 mt-2 flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                May impact performance on your device
+              </p>
+            )}
+            <p className="text-[11px] theme-text-secondary mt-2">
+              Active: <span className="font-medium">{effectiveBlurLevel === 'full' ? 'Full' : effectiveBlurLevel === 'reduced' ? 'Reduced' : 'Off'}</span>
+            </p>
+          </div>
         )}
 
         <div className="h-px my-4 border-t border-[color:var(--theme-border)]" />

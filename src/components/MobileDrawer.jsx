@@ -66,7 +66,7 @@ export default function MobileDrawer({
     <div className="fixed inset-0 z-50 md:hidden">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
+        className="absolute inset-0 glass-backdrop animate-fadeIn"
         onClick={onClose}
         aria-hidden="true"
       />

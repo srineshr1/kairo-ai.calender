@@ -30,6 +30,37 @@
   --event-gray-bg: #ececf0;
   --event-gray-border: #7e8093;
   --event-gray-text: #2a2c34;
+  
+  /* Premium blur effect values - default to 'full' quality */
+  --blur-backdrop: 2px;
+  --blur-backdrop-sat: 100%;
+  --blur-panel: 16px;
+  --blur-panel-sat: 130%;
+  --blur-subtle: 10px;
+  --blur-modal: 10px;
+  --backdrop-opacity: 0.10;
+}
+
+/* Reduced blur for mid-range devices */
+[data-blur-level="reduced"] {
+  --blur-backdrop: 1px;
+  --blur-backdrop-sat: 100%;
+  --blur-panel: 6px;
+  --blur-panel-sat: 115%;
+  --blur-subtle: 4px;
+  --blur-modal: 4px;
+  --backdrop-opacity: 0.08;
+}
+
+/* No blur for low-end devices or accessibility */
+[data-blur-level="none"] {
+  --blur-backdrop: 0px;
+  --blur-backdrop-sat: 100%;
+  --blur-panel: 0px;
+  --blur-panel-sat: 100%;
+  --blur-subtle: 0px;
+  --blur-modal: 0px;
+  --backdrop-opacity: 0.85;
 }
 
 html, body, #root {
@@ -59,24 +90,22 @@ body {
 .glass-panel {
   background: color-mix(in srgb, var(--theme-panel) 85%, transparent);
   border: 1px solid color-mix(in srgb, var(--theme-border) 70%, transparent);
-  backdrop-filter: blur(32px) saturate(140%);
-  -webkit-backdrop-filter: blur(32px) saturate(140%);
+  backdrop-filter: blur(var(--blur-panel)) saturate(var(--blur-panel-sat));
+  -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(var(--blur-panel-sat));
   box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .glass-subtle {
   background: color-mix(in srgb, var(--theme-surface-alt) 75%, transparent);
   border: 1px solid color-mix(in srgb, var(--theme-border) 70%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-subtle));
+  -webkit-backdrop-filter: blur(var(--blur-subtle));
 }
 
 .glass-backdrop {
-  background:
-    radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 42%),
-    rgba(10, 14, 24, 0.36);
-  backdrop-filter: blur(8px) saturate(130%);
-  -webkit-backdrop-filter: blur(8px) saturate(130%);
+  background: rgba(0, 0, 0, var(--backdrop-opacity));
+  backdrop-filter: blur(var(--blur-backdrop));
+  -webkit-backdrop-filter: blur(var(--blur-backdrop));
 }
 
 .glass-modal {
@@ -86,6 +115,8 @@ body {
     0 26px 48px -30px rgba(0, 0, 0, 0.55),
     0 12px 26px -20px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(var(--blur-modal));
+  -webkit-backdrop-filter: blur(var(--blur-modal));
 }
 
 .glass-field {

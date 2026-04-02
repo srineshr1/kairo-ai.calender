@@ -16,6 +16,8 @@ const DEFAULT_SETTINGS = {
   reminderTime: 15,
   whatsappPollInterval: 30,
   whatsappAutoAdd: true,
+  blurEnabled: true,        // User preference toggle for blur effects
+  blurOverride: null,       // Manual override: null (auto) | 'none' | 'reduced' | 'full'
 }
 
 export const useSettingsStore = create((set, get) => ({
@@ -25,6 +27,7 @@ export const useSettingsStore = create((set, get) => ({
       savingKeys: {},
       supabase: null,
       userId: null,
+      deviceBlurLevel: 'full',  // Auto-detected device capability: 'none' | 'reduced' | 'full'
 
       updateSetting: (key, value) => {
         const { supabase, userId } = get()
@@ -202,6 +205,32 @@ export const useSettingsStore = create((set, get) => ({
               }
             })
         }
+      },
+
+      /**
+       * Initialize blur settings based on detected device capability
+       * @param {string} detectedLevel - 'none' | 'reduced' | 'full'
+       */
+      initializeBlurSettings: (detectedLevel) => {
+        set({ deviceBlurLevel: detectedLevel })
+        console.log('[Settings] Device blur level set to:', detectedLevel)
+      },
+
+      /**
+       * Get the effective blur level considering user preferences and device capability
+       * @returns {string} 'none' | 'reduced' | 'full'
+       */
+      getEffectiveBlurLevel: () => {
+        const { blurEnabled, blurOverride, deviceBlurLevel } = get()
+        
+        // If blur is disabled by user, return 'none'
+        if (!blurEnabled) return 'none'
+        
+        // If user has set a manual override, use that
+        if (blurOverride) return blurOverride
+        
+        // Otherwise use auto-detected level
+        return deviceBlurLevel
       },
 
       validate: () => {
