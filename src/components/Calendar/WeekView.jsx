@@ -26,7 +26,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
     searchQuery, reschedule,
     awakeStart, awakeEnd, setAwakeStart, setAwakeEnd,
   } = useEventStore()
-  const { showPastEvents } = useSettingsStore()
+  const { showPastEvents, dragDropEnabled } = useSettingsStore()
   const { getEventColor } = useThemeColors()
 
   const days = useMemo(() => getFullWeekDays(currentWeekStart), [currentWeekStart])
@@ -56,6 +56,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   )
+  const activeSensors = dragDropEnabled ? sensors : []
 
   const navigate = useCallback((dir) => {
     setSlideDir(dir)
@@ -205,7 +206,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
       {/* Timeline */}
       <div ref={timelineRef} className="flex-1 overflow-y-auto light-scroll overflow-x-hidden min-w-0">
         <DndContext
-          sensors={sensors}
+          sensors={activeSensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}

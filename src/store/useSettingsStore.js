@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS = {
   whatsappAutoAdd: true,
   blurEnabled: true,        // User preference toggle for blur effects
   blurOverride: null,       // Manual override: null (auto) | 'none' | 'reduced' | 'full'
+  dragDropEnabled: true,    // Enable/disable drag and drop for event rescheduling
 }
 
 export const useSettingsStore = create((set, get) => ({

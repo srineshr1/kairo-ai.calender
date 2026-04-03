@@ -22,7 +22,7 @@ export default function DayView({ onEventClick, onSlotClick, initialDate }) {
     events, searchQuery, reschedule,
     awakeStart, awakeEnd, setAwakeStart, setAwakeEnd,
   } = useEventStore()
-  const { showPastEvents } = useSettingsStore()
+  const { showPastEvents, dragDropEnabled } = useSettingsStore()
   const { getEventDotColor } = useThemeColors()
 
   const [currentDay, setCurrentDay] = useState(initialDate || new Date())
@@ -52,6 +52,7 @@ export default function DayView({ onEventClick, onSlotClick, initialDate }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   )
+  const activeSensors = dragDropEnabled ? sensors : []
 
   const navigate = (dir) => {
     setSlideDir(dir)
@@ -191,7 +192,7 @@ export default function DayView({ onEventClick, onSlotClick, initialDate }) {
 
       {/* Day timeline */}
       <DndContext
-        sensors={sensors}
+        sensors={activeSensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >

@@ -5,6 +5,7 @@ import { useDarkStore } from '../../store/useDarkStore'
 import { useWhatsAppSettings } from '../../store/useWhatsAppSettings'
 import { useWhatsAppBridgeStatus } from '../../hooks/useWhatsAppBridgeStatus'
 import { useNotificationStore } from '../../store/useNotificationStore'
+import { useSettingsStore } from '../../store/useSettingsStore'
 import { useAuth } from '../../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { KEYS, handleListNavigation } from '../../lib/accessibility'
@@ -29,6 +30,7 @@ export default function TopBar({
   const { connected } = useWhatsAppBridgeStatus()
   const { isOpen, togglePanel, unreadCount } = useNotificationStore()
   const { user, authEnabled, signOut } = useAuth()
+  const { dragDropEnabled, updateSetting } = useSettingsStore()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [whatsappOpen, setWhatsappOpen] = useState(false)
@@ -140,6 +142,22 @@ export default function TopBar({
       <div className="flex-1" />
 
       <div className="flex gap-1" role="toolbar" aria-label="Calendar actions">
+        {/* Drag & Drop toggle - only show in Day and Week views */}
+        {(activeView === 'Day' || activeView === 'Week') && (
+          <button
+            onClick={() => updateSetting('dragDropEnabled', !dragDropEnabled)}
+            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11.5px] font-medium transition-all duration-150 whitespace-nowrap ${
+              dragDropEnabled
+                ? 'text-white shadow-sm'
+                : 'theme-text-secondary hover:bg-black/5 theme-hover-text'
+            }`}
+            style={dragDropEnabled ? { backgroundColor: 'var(--color-accent)' } : {}}
+            aria-label={`Drag and drop is ${dragDropEnabled ? 'enabled' : 'disabled'}. Click to ${dragDropEnabled ? 'disable' : 'enable'}.`}
+            aria-pressed={dragDropEnabled}
+          >
+            Drag & Drop: {dragDropEnabled ? 'On' : 'Off'}
+          </button>
+        )}
         <div className="relative">
           <button
             onClick={() => setWhatsappOpen(!whatsappOpen)}
