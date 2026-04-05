@@ -166,10 +166,10 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
           setIsSaving(false)
           return
         }
-        editEvent(editTarget.id, sanitizedForm)
+        await editEvent(editTarget.id, sanitizedForm)
         announce('Event updated successfully', 'polite')
       } else {
-        addEvent(sanitizedForm)
+        await addEvent(sanitizedForm)
         announce('Event created successfully', 'polite')
       }
       
@@ -187,7 +187,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
   const handleRecurringChoice = async (editAll) => {
     setIsSaving(true)
     try {
-      editEvent(editTarget.id, form, editAll)
+      await editEvent(editTarget.id, form, editAll)
       await new Promise(resolve => setTimeout(resolve, 300))
       setShowRecurringPrompt(false)
       setIsSaving(false)
@@ -203,7 +203,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
   const handleDelete = async () => {
     setIsSaving(true)
     try {
-      if (editTarget) deleteEvent(editTarget.id)
+      if (editTarget) await deleteEvent(editTarget.id)
       await new Promise(resolve => setTimeout(resolve, 300))
       setIsSaving(false)
       announce('Event deleted', 'polite')

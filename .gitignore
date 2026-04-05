@@ -62,6 +62,16 @@ whatsapp-bridge/config/api-keys.json
 # Windows Reserved Names
 nul
 
+# Firebase
+.firebase/
+firebase-debug*.log
+firestore-debug*.log
+
+# Playwright
+playwright-report/
+test-results/
+*.png
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

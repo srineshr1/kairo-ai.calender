@@ -59,7 +59,7 @@ describe('useEventStore', () => {
       
       addEvent({
         title: 'New Task',
-        date: '2026-03-30',
+        date: '2026-06-30',
         time: '10:00',
         duration: 60,
       })

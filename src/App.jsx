@@ -33,6 +33,7 @@ const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 import getSupabaseClient from './lib/supabase'
 
 function CalendarApp() {
+  const getEffectiveBlurLevel = useSettingsStore((state) => state.getEffectiveBlurLevel)
   const settings = useSettingsStore()
   const [activeView, setActiveView] = useState('Week')
   const [modal, setModal] = useState({ open: false, event: null, date: null, time: null })
@@ -321,9 +322,9 @@ function CalendarApp() {
 
   // Apply blur level to html element based on settings
   useEffect(() => {
-    const effectiveBlurLevel = settings.getEffectiveBlurLevel()
+    const effectiveBlurLevel = getEffectiveBlurLevel()
     document.documentElement.setAttribute('data-blur-level', effectiveBlurLevel)
-  }, [settings.blurEnabled, settings.blurOverride, settings.deviceBlurLevel])
+  }, [settings.blurEnabled, settings.blurOverride, settings.deviceBlurLevel, getEffectiveBlurLevel])
 
   // Load test helper in development (disabled - file missing)
   // useEffect(() => {

@@ -3,8 +3,6 @@
  * Converts natural language and various date formats into structured calendar events
  */
 
-const TODAY = new Date()
-
 /**
  * Parse various Indian date formats to ISO date string (YYYY-MM-DD)
  * 
@@ -25,6 +23,9 @@ const TODAY = new Date()
  */
 function parseIndianDate(str) {
   if (!str) return null
+  
+  // Get today's date fresh each time for test mocking support
+  const TODAY = new Date()
 
   // Already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str.trim())) return str.trim()

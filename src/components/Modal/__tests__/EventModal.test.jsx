@@ -29,7 +29,7 @@ describe('EventModal - Input Validation', () => {
     )
 
     // Try to save without a title
-    const saveButton = screen.getByText('Save')
+    const saveButton = screen.getByText('Create')
     fireEvent.click(saveButton)
 
     // Should show validation error
@@ -55,7 +55,7 @@ describe('EventModal - Input Validation', () => {
     })
 
     // Try to save
-    const saveButton = screen.getByText('Save')
+    const saveButton = screen.getByText('Create')
     fireEvent.click(saveButton)
 
     // Should show validation error
@@ -75,7 +75,7 @@ describe('EventModal - Input Validation', () => {
     )
 
     // Try to save without a title to trigger error
-    const saveButton = screen.getByText('Save')
+    const saveButton = screen.getByText('Create')
     fireEvent.click(saveButton)
 
     // Should show validation error
@@ -104,7 +104,7 @@ describe('EventModal - Input Validation', () => {
     )
 
     // Try to save without a title
-    const saveButton = screen.getByText('Save')
+    const saveButton = screen.getByText('Create')
     fireEvent.click(saveButton)
 
     // Title input should have red border
@@ -134,7 +134,7 @@ describe('EventModal - Input Validation', () => {
     fireEvent.change(durationInput, { target: { value: '2' } })
 
     // Try to save
-    const saveButton = screen.getByText('Save')
+    const saveButton = screen.getByText('Create')
     fireEvent.click(saveButton)
 
     // Should show validation error

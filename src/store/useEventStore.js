@@ -4,6 +4,33 @@ import { getWorkWeekStart, addWeek, subWeek, fmtDate, timeToMinutes } from '../l
 import { sanitizeString } from '../lib/validation'
 import { isAuthRequired } from '../lib/envConfig'
 
+/**
+ * Transform event from database (snake_case) to app (camelCase)
+ * @param {Object} dbEvent - Event from Supabase with snake_case fields
+ * @returns {Object} Event with camelCase fields
+ */
+function transformEventFromDB(dbEvent) {
+  if (!dbEvent) return dbEvent
+  return {
+    ...dbEvent,
+    recurrenceEnd: dbEvent.recurrence_end || dbEvent.recurrenceEnd,
+  }
+}
+
+/**
+ * Transform event from app (camelCase) to database (snake_case)
+ * @param {Object} appEvent - Event from app with camelCase fields
+ * @returns {Object} Event with snake_case fields for database
+ */
+function transformEventToDB(appEvent) {
+  if (!appEvent) return appEvent
+  const { recurrenceEnd, ...rest } = appEvent
+  return {
+    ...rest,
+    recurrence_end: recurrenceEnd || null,
+  }
+}
+
 function sanitizeEvent(ev) {
   return {
     ...ev,
@@ -82,7 +109,7 @@ export const useEventStore = create((set, get) => ({
           if (error) throw error
 
           if (data && data.length > 0) {
-            set({ events: data, isLoading: false })
+            set({ events: data.map(transformEventFromDB), isLoading: false })
           } else {
             set({ isLoading: false })
           }
@@ -111,7 +138,7 @@ export const useEventStore = create((set, get) => ({
             switch (eventType) {
               case 'INSERT':
                 set((s) => ({
-                  events: [...s.events.filter(e => e.id !== newRecord.id), newRecord]
+                  events: [...s.events.filter(e => e.id !== newRecord.id), transformEventFromDB(newRecord)]
                     .sort((a, b) => {
                       if (a.date !== b.date) return a.date.localeCompare(b.date)
                       return a.time.localeCompare(b.time)
@@ -121,7 +148,7 @@ export const useEventStore = create((set, get) => ({
                 
               case 'UPDATE':
                 set((s) => ({
-                  events: s.events.map(e => e.id === newRecord.id ? newRecord : e)
+                  events: s.events.map(e => e.id === newRecord.id ? transformEventFromDB(newRecord) : e)
                 }))
                 break
                 
@@ -156,8 +183,8 @@ export const useEventStore = create((set, get) => ({
         const { supabase, userId } = get()
         const sanitizedEv = sanitizeEvent(ev)
         
-        // Create temporary ID for optimistic UI update
-        const tempId = 'temp_' + Date.now() + Math.random().toString(36).slice(2, 9)
+        // Create temporary ID for optimistic UI update using genId
+        const tempId = genId()
         
         const newEv = { 
           id: tempId,
@@ -238,10 +265,14 @@ export const useEventStore = create((set, get) => ({
         }
       },
 
-      editEvent: (id, changes, editAll = false) => {
+      editEvent: async (id, changes, editAll = false) => {
         const { supabase, userId } = get()
         const sanitizedChanges = sanitizeEvent(changes)
         
+        // Store original event for rollback
+        const originalEvent = get().events.find(e => e.id === id)
+        
+        // Optimistic update
         set((s) => ({
           events: s.events.map((e) => {
             if (e.id === id) {
@@ -253,43 +284,60 @@ export const useEventStore = create((set, get) => ({
         }))
 
         if (supabase && userId) {
-          const updateData = {
-            title: sanitizedChanges.title,
-            sub: sanitizedChanges.sub || '',
-            date: sanitizedChanges.date,
-            time: sanitizedChanges.time,
-            duration: sanitizedChanges.duration,
-            color: sanitizedChanges.color,
-            done: sanitizedChanges.done,
-            cancelled: sanitizedChanges.cancelled,
-            recurrence: sanitizedChanges.recurrence,
-            recurrence_end: sanitizedChanges.recurrenceEnd || null,
-          }
+          // Build updateData with only defined fields to avoid sending undefined values
+          const updateData = {}
+          
+          // Map app fields to database fields
+          if (sanitizedChanges.title !== undefined) updateData.title = sanitizedChanges.title
+          if (sanitizedChanges.sub !== undefined) updateData.sub = sanitizedChanges.sub || ''
+          if (sanitizedChanges.date !== undefined) updateData.date = sanitizedChanges.date
+          if (sanitizedChanges.time !== undefined) updateData.time = sanitizedChanges.time
+          if (sanitizedChanges.duration !== undefined) updateData.duration = sanitizedChanges.duration
+          if (sanitizedChanges.color !== undefined) updateData.color = sanitizedChanges.color
+          if (sanitizedChanges.done !== undefined) updateData.done = sanitizedChanges.done
+          if (sanitizedChanges.cancelled !== undefined) updateData.cancelled = sanitizedChanges.cancelled
+          if (sanitizedChanges.recurrence !== undefined) updateData.recurrence = sanitizedChanges.recurrence
+          if (sanitizedChanges.recurrenceEnd !== undefined) updateData.recurrence_end = sanitizedChanges.recurrenceEnd || null
 
           if (get().isOnline) {
-            supabase
-              .from('events')
-              .update(updateData)
-              .eq('id', id)
-              .eq('user_id', userId)
-              .then(({ error }) => {
-                if (error) {
-                  console.error('Failed to sync event update:', error)
-                  set((s) => ({
-                    pendingSync: [...s.pendingSync, { type: 'UPDATE', id, data: updateData, userId }]
-                  }))
-                }
-              })
+            try {
+              const { error } = await supabase
+                .from('events')
+                .update(updateData)
+                .eq('id', id)
+                .eq('user_id', userId)
+              
+              if (error) throw error
+            } catch (error) {
+              console.error('Failed to sync event update:', error)
+              // Rollback optimistic update
+              if (originalEvent) {
+                set((s) => ({
+                  events: s.events.map(e => e.id === id ? originalEvent : e)
+                }))
+              }
+              toast.error('Failed to update event', 'Error')
+              set((s) => ({
+                pendingSync: [...s.pendingSync, { type: 'UPDATE', id, data: updateData, userId }]
+              }))
+            }
           } else {
             set((s) => ({
               pendingSync: [...s.pendingSync, { type: 'UPDATE', id, data: updateData, userId }]
             }))
+            toast.info('Event updated locally - will sync when online', 'Offline Mode')
           }
         }
       },
 
-      deleteEvent: (id) => {
+      deleteEvent: async (id) => {
         const { supabase, userId } = get()
+        
+        // Store original state for rollback
+        const originalEvents = get().events
+        const originalTaskLog = get().taskLog
+        
+        // Optimistic delete
         set((s) => ({
           events: s.events.filter((e) => e.id !== id),
           taskLog: s.taskLog.filter((l) => l.eventId !== id),
@@ -298,20 +346,23 @@ export const useEventStore = create((set, get) => ({
 
         if (supabase && userId) {
           if (get().isOnline) {
-            supabase
-              .from('events')
-              .delete()
-              .eq('id', id)
-              .eq('user_id', userId)
-              .then(({ error }) => {
-                if (error) {
-                  console.error('Failed to sync event deletion:', error)
-                  set((s) => ({
-                    pendingSync: [...s.pendingSync, { type: 'DELETE', id, userId }]
-                  }))
-                  toast.error('Event deleted locally - will sync when online', 'Offline')
-                }
-              })
+            try {
+              const { error } = await supabase
+                .from('events')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId)
+              
+              if (error) throw error
+            } catch (error) {
+              console.error('Failed to sync event deletion:', error)
+              // Rollback optimistic delete
+              set({ events: originalEvents, taskLog: originalTaskLog })
+              toast.error('Failed to delete event', 'Error')
+              set((s) => ({
+                pendingSync: [...s.pendingSync, { type: 'DELETE', id, userId }]
+              }))
+            }
           } else {
             set((s) => ({
               pendingSync: [...s.pendingSync, { type: 'DELETE', id, userId }]
@@ -321,41 +372,47 @@ export const useEventStore = create((set, get) => ({
         }
       },
 
-      markDone: (id) => {
+      markDone: async (id) => {
         const { supabase, userId } = get()
         
-        set((s) => {
-          const ev = s.events.find((e) => e.id === id)
-          if (!ev) return {}
-          
-          const newDone = !ev.done
-          const newStatus = newDone ? 'done' : getTaskStatus({ ...ev, done: false })
-          const log = {
-            id: logId(), eventId: id, title: ev.title,
-            status: newStatus, timestamp: new Date().toISOString(),
-          }
-          
-          const updatedEvent = { ...ev, done: newDone }
-          
-          // Sync to Supabase
-          if (supabase && userId && get().isOnline) {
-            supabase
+        const ev = get().events.find((e) => e.id === id)
+        if (!ev) return
+        
+        const newDone = !ev.done
+        const newStatus = newDone ? 'done' : getTaskStatus({ ...ev, done: false })
+        const log = {
+          id: logId(), eventId: id, title: ev.title,
+          status: newStatus, timestamp: new Date().toISOString(),
+        }
+        
+        const updatedEvent = { ...ev, done: newDone }
+        
+        // Optimistic update
+        set((s) => ({
+          events: s.events.map((e) => e.id === id ? updatedEvent : e),
+          taskLog: [...s.taskLog, log],
+        }))
+        
+        // Sync to Supabase
+        if (supabase && userId && get().isOnline) {
+          try {
+            const { error } = await supabase
               .from('events')
               .update({ done: newDone })
               .eq('id', id)
               .eq('user_id', userId)
-              .then(({ error }) => {
-                if (error) {
-                  console.error('Failed to sync mark done:', error)
-                }
-              })
+            
+            if (error) throw error
+          } catch (error) {
+            console.error('Failed to sync mark done:', error)
+            // Rollback
+            set((s) => ({
+              events: s.events.map((e) => e.id === id ? ev : e),
+              taskLog: s.taskLog.filter(l => l.id !== log.id),
+            }))
+            toast.error('Failed to mark task done', 'Error')
           }
-          
-          return {
-            events: s.events.map((e) => e.id === id ? updatedEvent : e),
-            taskLog: [...s.taskLog, log],
-          }
-        })
+        }
       },
 
       cancelEvent: (id) => {

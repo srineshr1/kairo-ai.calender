@@ -50,16 +50,23 @@ vi.mock('../store/useDarkStore', () => ({
 }))
 
 vi.mock('../store/useSettingsStore', () => ({
-  useSettingsStore: vi.fn(() => ({
-    accentColor: '#9880cc',
-    fontSize: 'medium',
-    compactMode: false,
-    defaultView: 'week',
-    initializeSettings: vi.fn(),
-    subscribeToSettings: vi.fn(),
-    unsubscribeFromSettings: vi.fn(),
-    showPastEvents: true,
-  })),
+  useSettingsStore: vi.fn((selector) => {
+    const state = {
+      accentColor: '#9880cc',
+      fontSize: 'medium',
+      compactMode: false,
+      defaultView: 'week',
+      initializeSettings: vi.fn(),
+      subscribeToSettings: vi.fn(),
+      unsubscribeFromSettings: vi.fn(),
+      showPastEvents: true,
+      blurEnabled: true,
+      blurOverride: null,
+      deviceBlurLevel: 'full',
+      getEffectiveBlurLevel: vi.fn(() => 'full'),
+    }
+    return selector ? selector(state) : state
+  }),
 }))
 
 vi.mock('../store/useChatStore', () => ({
