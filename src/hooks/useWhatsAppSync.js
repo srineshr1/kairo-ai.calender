@@ -3,7 +3,7 @@ import { useChatStore } from '../store/useChatStore'
 import { useEventStore } from '../store/useEventStore'
 import { useNotificationStore } from '../store/useNotificationStore'
 import { useSettingsStore } from '../store/useSettingsStore'
-import { getEvents, clearEvents, WhatsAppBridgeError } from '../api/whatsappClient'
+import { getEvents, clearEvents, getCurrentUserId, WhatsAppBridgeError } from '../api/whatsappClient'
 import { DEFAULT_POLL_INTERVAL } from '../lib/constants'
 import { sanitizeString } from '../lib/validation'
 
@@ -25,6 +25,16 @@ export function useWhatsAppSync() {
 
   const syncEvents = useCallback(async () => {
     if (pollingRef.current) return
+    
+    // Skip sync if bridge credentials aren't ready yet
+    // This handles the race condition where the sync hook runs
+    // before AuthContext has completed bridge registration
+    const userId = getCurrentUserId()
+    if (!userId) {
+      // Silently skip - credentials will be set after bridge registration completes
+      return
+    }
+    
     pollingRef.current = true
 
     try {

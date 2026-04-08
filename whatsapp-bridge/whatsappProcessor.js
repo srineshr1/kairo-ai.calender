@@ -182,6 +182,8 @@ function pushEvents(userId, events) {
 async function processIncomingMessage(userId, incomingMessage) {
   const groupName = incomingMessage.groupName || 'WhatsApp Group'
   const preview = (incomingMessage.text || '').slice(0, 240)
+  
+  console.log(`[Processor] Received message from ${groupName}: "${preview.slice(0, 60)}..." (type: ${incomingMessage.messageType})`)
 
   const record = {
     id: incomingMessage.id || `${Date.now()}`,
@@ -199,7 +201,11 @@ async function processIncomingMessage(userId, incomingMessage) {
 
   let events = []
 
-  if (incomingMessage.messageType === 'conversation' || incomingMessage.messageType === 'extendedTextMessage') {
+  // Handle text messages - whatsapp-web.js uses 'chat' for regular messages
+  // Also support 'conversation' and 'extendedTextMessage' for compatibility
+  const textTypes = ['chat', 'conversation', 'extendedTextMessage']
+  if (textTypes.includes(incomingMessage.messageType)) {
+    console.log(`[Processor] Processing text message (type: ${incomingMessage.messageType}) from ${groupName}`)
     events = await analyzeTextWithGroq(incomingMessage.text || '', groupName)
   }
 
@@ -220,6 +226,8 @@ async function processIncomingMessage(userId, incomingMessage) {
     record.extractedEvents = events.length
     saveIncomingMessage(userId, record)
     console.log(`[Processor] Added ${events.length} upcoming event(s) for ${userId} from ${groupName}`)
+  } else {
+    console.log(`[Processor] No events extracted from message (hasEventIntent: ${record.hasEventIntent})`)
   }
 }
 
