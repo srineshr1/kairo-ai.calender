@@ -21,8 +21,8 @@ const MAX_RETRIES = 3
 const BASE_RETRY_DELAY = 1000 // 1 second
 
 // Models
-const TEXT_MODEL = 'llama-3.3-70b-versatile'
-const VISION_MODEL = 'llama-3.2-90b-vision-preview' // Groq's vision model
+const TEXT_MODEL = import.meta.env.VITE_GROQ_TEXT_MODEL || 'llama-3.3-70b-versatile'
+const VISION_MODEL = import.meta.env.VITE_GROQ_VISION_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct'
 
 // Status codes that are safe to retry
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504]
