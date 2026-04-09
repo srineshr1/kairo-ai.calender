@@ -21,6 +21,16 @@ const DEFAULT_SETTINGS = {
   dragDropEnabled: true,    // Enable/disable drag and drop for event rescheduling
 }
 
+const PERSISTED_SETTING_KEYS = Object.keys(DEFAULT_SETTINGS)
+
+function getPersistableSettings(state, overrides = {}) {
+  const merged = { ...state, ...overrides }
+  return PERSISTED_SETTING_KEYS.reduce((acc, key) => {
+    acc[key] = merged[key]
+    return acc
+  }, {})
+}
+
 export const useSettingsStore = create((set, get) => ({
       ...DEFAULT_SETTINGS,
       hasUnsavedChanges: false,
@@ -36,12 +46,7 @@ export const useSettingsStore = create((set, get) => ({
         set({ [key]: value })
 
         if (supabase && userId) {
-          const settings = { ...get(), [key]: value }
-          delete settings.hasUnsavedChanges
-          delete settings.isLoaded
-          delete settings.savingKeys
-          delete settings.supabase
-          delete settings.userId
+          const settings = getPersistableSettings(get(), { [key]: value })
 
           set((state) => ({
             savingKeys: {
@@ -77,12 +82,7 @@ export const useSettingsStore = create((set, get) => ({
         set(updates)
 
         if (supabase && userId) {
-          const settings = { ...get(), ...updates }
-          delete settings.hasUnsavedChanges
-          delete settings.isLoaded
-          delete settings.savingKeys
-          delete settings.supabase
-          delete settings.userId
+          const settings = getPersistableSettings(get(), updates)
 
           set((state) => {
             const nextSavingKeys = { ...state.savingKeys }

@@ -60,6 +60,141 @@ function extractJSON(raw) {
   return null
 }
 
+const DAY_ALIASES = {
+  mon: 'monday',
+  monday: 'monday',
+  tue: 'tuesday',
+  tues: 'tuesday',
+  tuesday: 'tuesday',
+  wed: 'wednesday',
+  wednesday: 'wednesday',
+  thu: 'thursday',
+  thur: 'thursday',
+  thurs: 'thursday',
+  thursday: 'thursday',
+  fri: 'friday',
+  friday: 'friday',
+  sat: 'saturday',
+  saturday: 'saturday',
+  sun: 'sunday',
+  sunday: 'sunday',
+}
+
+function normalizeDay(day) {
+  if (!day) return null
+  const key = String(day).trim().toLowerCase()
+  return DAY_ALIASES[key] || null
+}
+
+function to24HourTime(rawTime) {
+  if (!rawTime) return null
+
+  const cleaned = String(rawTime)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/\./g, ':')
+
+  const match = cleaned.match(/^(\d{1,2})(?::(\d{1,2}))?(am|pm)?$/)
+  if (!match) return null
+
+  let hour = Number(match[1])
+  let minute = Number(match[2] || '0')
+  const ampm = match[3]
+
+  if (Number.isNaN(hour) || Number.isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return null
+  }
+
+  if (ampm === 'am') {
+    if (hour === 12) hour = 0
+  } else if (ampm === 'pm') {
+    if (hour < 12) hour += 12
+  } else {
+    // Heuristic for timetable-style inputs like "2:15" that usually mean afternoon.
+    if (hour >= 1 && hour <= 7) hour += 12
+  }
+
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+function addMinutesToTime(hhmm, minutesToAdd = 60) {
+  if (!hhmm) return null
+  const [h, m] = hhmm.split(':').map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) return null
+  const total = h * 60 + m + minutesToAdd
+  const wrapped = ((total % (24 * 60)) + (24 * 60)) % (24 * 60)
+  const outH = Math.floor(wrapped / 60)
+  const outM = wrapped % 60
+  return `${String(outH).padStart(2, '0')}:${String(outM).padStart(2, '0')}`
+}
+
+function parseTimeRange(value) {
+  if (!value) return { startTime: null, endTime: null }
+  const text = String(value)
+  const parts = text.split(/\s*(?:-|to|–|—)\s*/i)
+  if (parts.length < 2) return { startTime: null, endTime: null }
+
+  const startTime = to24HourTime(parts[0])
+  const endTime = to24HourTime(parts[1])
+  return { startTime, endTime }
+}
+
+function coerceExtractedClasses(parsed) {
+  let candidates = []
+  if (Array.isArray(parsed)) {
+    candidates = parsed
+  } else if (Array.isArray(parsed?.classes)) {
+    candidates = parsed.classes
+  } else if (Array.isArray(parsed?.events)) {
+    candidates = parsed.events
+  } else if (Array.isArray(parsed?.timetable)) {
+    candidates = parsed.timetable
+  } else if (Array.isArray(parsed?.schedule)) {
+    candidates = parsed.schedule
+  }
+
+  const out = []
+  const seen = new Set()
+
+  candidates.forEach((entry) => {
+    if (!entry || typeof entry !== 'object') return
+
+    const day = normalizeDay(entry.day || entry.weekday || entry.dayName || entry.day_of_week)
+    const name = String(
+      entry.name || entry.subject || entry.title || entry.className || entry.course || ''
+    ).trim()
+
+    let startTime = to24HourTime(entry.startTime || entry.start || entry.start_time || entry.from)
+    let endTime = to24HourTime(entry.endTime || entry.end || entry.end_time || entry.to)
+
+    if ((!startTime || !endTime) && (entry.timeRange || entry.time || entry.slot)) {
+      const parsedRange = parseTimeRange(entry.timeRange || entry.time || entry.slot)
+      startTime = startTime || parsedRange.startTime
+      endTime = endTime || parsedRange.endTime
+    }
+
+    if (!day || !name || !startTime) return
+    if (!endTime) endTime = addMinutesToTime(startTime, 60)
+
+    const normalized = {
+      name,
+      day,
+      startTime,
+      endTime,
+      ...(entry.location ? { location: String(entry.location).trim() } : {}),
+      ...(entry.instructor ? { instructor: String(entry.instructor).trim() } : {}),
+    }
+
+    const dedupeKey = `${normalized.day}|${normalized.startTime}|${normalized.endTime}|${normalized.name.toLowerCase()}`
+    if (seen.has(dedupeKey)) return
+    seen.add(dedupeKey)
+    out.push(normalized)
+  })
+
+  return out
+}
+
 export function useLLM() {
   const { addMessage, setTyping, setOnline, setError } = useChatStore()
   const { events, addEvent, editEvent, deleteEvent } = useEventStore()
@@ -328,34 +463,58 @@ export function useLLM() {
       
       const { attachments, extractedText, isImage, isPDF } = await processFileForTimetable(file)
       
-      // Call AI to extract timetable
-      let result
-      if (isImage) {
-        result = await generateText({
-          messages: [
+      // Call AI to extract timetable (with one fallback pass for dense timetable layouts)
+      const baseMessages = isImage
+        ? [
             { role: 'system', content: getExtractionPrompt() },
-            { role: 'user', content: 'Extract all classes and events from this timetable image.' }
-          ],
+            { role: 'user', content: 'Extract all classes and events from this timetable image.' },
+          ]
+        : [
+            { role: 'system', content: getExtractionPrompt() },
+            { role: 'user', content: `Extract all classes and events from this timetable:\n\n${extractedText}` },
+          ]
+
+      let result = await generateText({
+        ...(isPDF ? { model: MODEL } : {}),
+        messages: baseMessages,
+        attachments,
+        temperature: 0.1,
+        maxTokens: 2600,
+      })
+
+      let parsed = extractJSON(result.response)
+      let classes = coerceExtractedClasses(parsed)
+
+      if (classes.length === 0) {
+        const retryMessages = isImage
+          ? [
+              {
+                role: 'system',
+                content: `${getExtractionPrompt()}\n\nExtra instructions for table images:\n- First read day labels and period timing row.\n- Then map each cell to day + time range.\n- Keep abbreviations exactly as seen (e.g., CC, AI & ML, OOSD).\n- If a lab spans multiple consecutive periods, return one class with the full combined time range.`,
+              },
+              { role: 'user', content: 'Second pass: the image is a weekly class timetable. Return JSON only.' },
+            ]
+          : [
+              {
+                role: 'system',
+                content: `${getExtractionPrompt()}\n\nExtra instructions:\n- The input may be a compact or messy timetable text dump.\n- Infer day + time mapping conservatively and return only confident classes.`,
+              },
+              { role: 'user', content: `Second pass extraction from timetable text:\n\n${extractedText}` },
+            ]
+
+        result = await generateText({
+          ...(isPDF ? { model: MODEL } : {}),
+          messages: retryMessages,
           attachments,
-          temperature: 0.1,
-          maxTokens: 2000
+          temperature: 0,
+          maxTokens: 2600,
         })
-      } else {
-        // PDF - send extracted text
-        result = await generateText({
-          model: MODEL,
-          messages: [
-            { role: 'system', content: getExtractionPrompt() },
-            { role: 'user', content: `Extract all classes and events from this timetable:\n\n${extractedText}` }
-          ],
-          temperature: 0.1,
-          maxTokens: 2000
-        })
+
+        parsed = extractJSON(result.response)
+        classes = coerceExtractedClasses(parsed)
       }
-      
-      const parsed = extractJSON(result.response)
-      
-      if (!parsed?.success || !parsed.classes || parsed.classes.length === 0) {
+
+      if (classes.length === 0) {
         const errorMsg = parsed?.error || 'Could not identify any classes in the timetable.'
         addMessage({ role: 'ai', text: `❌ ${errorMsg}\n\nPlease make sure the image clearly shows class names, days, and times.` })
         resetWizard()
@@ -367,14 +526,14 @@ export function useLLM() {
       setWizardState(prev => ({
         ...prev,
         step: WIZARD_STEPS.ASK_DATE_RANGE,
-        extractedClasses: parsed.classes,
+        extractedClasses: classes,
       }))
       
-      const classesDisplay = formatClassesForDisplay(parsed.classes)
+      const classesDisplay = formatClassesForDisplay(classes)
       
       addMessage({
         role: 'ai',
-        text: `I found ${parsed.classes.length} classes in your timetable:\n\n${classesDisplay}\n\n${parsed.notes ? `Note: ${parsed.notes}\n\n` : ''}What date range should I add these recurring events? For example: "April 8 to June 15" or "this semester" or "next 3 months"`
+        text: `I found ${classes.length} classes in your timetable:\n\n${classesDisplay}\n\n${parsed?.notes ? `Note: ${parsed.notes}\n\n` : ''}What date range should I add these recurring events? For example: "April 8 to June 15" or "this semester" or "next 3 months"`
       })
       
       setOnline(true)

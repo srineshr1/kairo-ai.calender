@@ -1,168 +1,51 @@
-# Agent Guidelines for Kairo
+# Kairo Agent Notes
 
-An intelligent calendar app with WhatsApp integration. Built with React, TypeScript, Vite, Supabase, and Zustand.
+## Runtime shape (important)
+- Two apps must both run for WhatsApp/AI features: frontend (`/`, Vite+React) and bridge server (`whatsapp-bridge/`, Express).
+- Frontend entrypoint: `src/main.jsx` → `src/App.jsx` (wrapped by `ErrorBoundary`, `BrowserRouter`, `AuthProvider`).
+- Bridge entrypoint: `whatsapp-bridge/bridge-server.js`.
+- Frontend is ESM (`"type": "module"`); bridge is CommonJS (`"type": "commonjs"`). Don't mix import styles across the boundary.
 
-## Build & Test Commands
+## Commands you will actually use
+- Frontend: `npm run dev`, `npm run build`, `npm run preview`.
+- Tests: `npm run test` (watch), `npx vitest run <path-to-test-file>`, `npm run test:coverage`, `npm run test:ui`.
+- Typecheck: `npx tsc --noEmit`.
+- Bridge: in `whatsapp-bridge/`, use `npm start` (production) or `npm run dev` (watch mode with `--watch`).
+- Deploy frontend: `npm run build && firebase deploy --only hosting`.
+- Deploy bridge: from `whatsapp-bridge/`, `railway up --no-gitignore` (the `--no-gitignore` is required because Railway project is not Git-connected).
+- There is no ESLint or Prettier config in this repo.
 
-```bash
-# Development
-npm run dev              # Vite dev server (http://localhost:5173)
-npm run build            # Production build
-npm run preview          # Preview production build
+## High-signal env/config gotchas
+- Frontend uses `VITE_BRIDGE_URL` (not `VITE_WHATSAPP_BRIDGE_URL`). `SETUP.md` still references the old name — trust the code, not the docs.
+- In dev, `whatsappClient.js` intentionally sets `BRIDGE_URL` to `''` (empty string) so requests go through the Vite dev proxy. Only in production does it fall back to `http://localhost:3001`.
+- Vite dev proxy only forwards `/register`, `/users`, and `/health` to `http://localhost:3001` (see `vite.config.js`). New bridge endpoints need adding there too.
+- `VITE_USE_BRIDGE_PROXY=true` with a missing/empty `VITE_BRIDGE_URL` will throw in `src/api/groqClient.js`.
+- Never set `VITE_GROQ_API_KEY` in production — `VITE_*` vars are baked into the client bundle and visible to anyone.
+- Auth behavior is environment-driven (`src/lib/envConfig.js`): production always requires auth; in dev, `VITE_REQUIRE_AUTH` controls it.
+- Railway auto-sets `PORT`; do not set `BRIDGE_PORT` in production. Locally, bridge defaults to `3001`.
 
-# Testing (Vitest + @testing-library/react)
-npm run test             # Run all tests (watch mode)
-npm run test:ui          # Run with Vitest UI browser
-npm run test:coverage    # Run with coverage report
+## Bridge auth behavior
+- Only `/health` and `/register` are public in `bridge-server.js`.
+- All `/users/:userId/*` routes require `X-User-ID` + `X-API-Key` via middleware (`middleware/bridgeAuth.js`).
+- Dev auth bypass requires both: `BRIDGE_REQUIRE_AUTH=false` AND `NODE_ENV=development`.
+- API keys are stored in `whatsapp-bridge/config/api-keys.json` (file-based, not in Supabase). This file is gitignored.
 
-# Run a SINGLE test file:
-npx vitest run src/__tests__/dateUtils.test.js
-npx vitest run src/components/Modal/__tests__/EventModal.test.jsx
+## Testing realities
+- Vitest runs in `jsdom` with globals and `src/setupTests.js`.
+- `setupTests.js` globally mocks `localStorage`, `matchMedia`, `DOMMatrix`, `Path2D` (needed by `pdfjs-dist`), `scrollIntoView`, and silences `console.error`/`console.warn`.
+- Default test timeout is 5000 ms.
+- Test files: `src/__tests__/` (unit) and `src/components/Modal/__tests__/` (component). Bridge tests in `whatsapp-bridge/__tests__/`.
 
-# Run tests matching a pattern:
-npx vitest run --testNamePattern="should format date"
-npx vitest run src/__tests__/validation.test.js -t "validateEvent"
+## Data/model constraints
+- Supabase schema in `supabase/schema.sql` (no migration tool configured).
+- RLS is expected on user-scoped tables; app/store code assumes `user_id` filtering when querying Supabase.
 
-# Watch mode for single file:
-npx vitest src/__tests__/dateUtils.test.js
+## Deployment
+- Frontend: built by Vite (`dist/`), hosted on Firebase Hosting with SPA rewrite (`firebase.json`).
+- Bridge: Docker on Railway (`whatsapp-bridge/Dockerfile` — node:20-alpine + Chromium for whatsapp-web.js).
 
-# TypeScript type checking (no ESLint configured)
-npx tsc --noEmit
-
-# Pre-commit validation
-npm run test && npm run build && npx tsc --noEmit
-```
-
-## Project Structure
-
-```
-src/
-├── api/                    # API clients (Groq LLM, WhatsApp bridge)
-├── components/             # React components
-│   ├── Calendar/           # WeekView, MonthView, DayView, EventBlock, TopBar
-│   ├── Chat/               # ChatSidebar, useLLM
-│   ├── Modal/              # EventModal, SettingsModal (with tabs/)
-│   ├── Notifications/      # NotificationPanel, NotificationItem
-│   ├── Sidebar/            # Sidebar, TaskList, MiniCalendar
-│   └── WhatsApp/           # WhatsAppSettings, WhatsAppPopup, WhatsAppToast
-├── contexts/               # AuthContext.jsx
-├── hooks/                  # Custom hooks (useAsync, useDebounce, usePWA, etc.)
-├── lib/                    # Utilities (dateUtils, validation, supabase, constants)
-├── pages/                  # Auth pages (Login, Signup, ForgotPassword, AuthCallback)
-├── store/                  # Zustand stores (useEventStore, useChatStore, etc.)
-├── __tests__/              # Root-level test files
-├── App.jsx                 # Root component
-├── main.jsx                # Entry point
-└── setupTests.js           # Vitest setup (localStorage, matchMedia mocks)
-```
-
-## Code Style
-
-### TypeScript
-- **Strict mode** with `noUnusedLocals`, `noUnusedParameters`, `noUncheckedIndexedAccess`
-- Use **`.jsx`** for React components, **`.tsx`** when using TypeScript generics
-- Use **`.ts`** for utilities and type definitions
-- Use **interface** for object shapes, **type** for unions/primitives
-- Use **JSDoc** for exported functions and complex logic
-- No ESLint is configured
-
-### Imports
-- `import React, { useState } from 'react'` (always include React)
-- Use `@/*` path aliases: `import { fmtDate } from '@/lib/dateUtils'`
-- Order: React → external libraries → internal modules (blank line separation)
-- Use `import type { TypeName }` for type-only imports
-
-### Naming Conventions
-| Type | Convention | Example |
-|------|------------|---------|
-| Components | PascalCase | `EventModal.jsx`, `WeekView.jsx` |
-| Hooks/Stores | camelCase with `use` | `useEventStore.js`, `useMobileLayout.js` |
-| Utilities | camelCase | `dateUtils.ts`, `validation.js` |
-| Constants | SCREAMING_SNAKE_CASE | `PX_PER_HOUR`, `DEFAULT_DURATION` |
-| Types | PascalCase | `Event`, `User`, `MiniCalDay` |
-| Test files | `*.test.{js,jsx,ts,tsx}` | `dateUtils.test.js` |
-
-### Components
-- Functional components with hooks only (no class components)
-- Destructure props: `function EventModal({ isOpen, onClose, defaultDate })`
-- Tailwind CSS with CSS variables for theming
-- ErrorBoundary for error handling
-
-### State Management (Zustand)
-```javascript
-export const useEventStore = create((set, get) => ({
-  events: [],
-  isLoading: false,
-  addEvent: async (ev) => {
-    set({ isLoading: true })
-    try { /* async logic */ } 
-    catch (error) { set({ error: error.message, isLoading: false }) }
-  },
-}))
-```
-
-### Error Handling
-- Try/catch for all async operations
-- Log errors with `console.error` and context
-- Use toast notifications for user-facing errors (`useToastStore`)
-- Never expose sensitive data in error messages
-
-### Validation & Sanitization
-- Always sanitize user input with `sanitizeString()` from `@/lib/validation`
-- Date format: **YYYY-MM-DD**, time format: **HH:MM** (24-hour)
-- Validate both client and server-side
-
-### Testing Patterns
-```javascript
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-
-vi.mock('../../../store/useEventStore', () => ({
-  useEventStore: () => ({ addEvent: vi.fn(), editEvent: vi.fn() }),
-}))
-
-describe('ComponentName', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  it('should do something', async () => {
-    render(<Component />)
-    await waitFor(() => {
-      expect(screen.getByText('Expected')).toBeInTheDocument()
-    })
-  })
-})
-```
-
-- Test setup: `src/setupTests.js` (global mocks)
-- Test locations: `__tests__/` subdirectory or `src/__tests__/`
-- Test timeout: 5 seconds (vitest.config.js)
-
-### Theming & Colors
-Dark mode via `class` on `<html>`. Tailwind color classes:
-- **Backgrounds**: `main`, `light-bg`, `light-card`, `sidebar`, `sidebar-deep`, `chat`
-- **Text**: `light-text`, `light-text-secondary`
-- **Accents**: `accent`, `accent-light`
-- **Events**: `event-pink`, `event-green`, `event-blue`, `event-amber`, `event-gray`
-- Fonts: `DM Sans` (sans), `DM Serif Display` (display)
-
-### Accessibility
-- `announce()` from `@/lib/accessibility` for screen readers
-- Focus trapping with `createFocusTrap()` for modals
-- ARIA attributes: `role`, `aria-modal`, `aria-labelledby`, `aria-describedby`
-- Keyboard navigation for all interactive elements
-
-### API Patterns (Supabase)
-- Use client from `@/lib/supabase`
-- Always include `user_id` filter: `.eq('user_id', userId)`
-- Real-time: `supabase.channel()` + `postgres_changes`
-- Offline: `pendingSync` queue for optimistic updates
-
-## Environment Configuration
-
-- Variables in `.env` (see `.env.example`)
-- Client-side: `import.meta.env.VITE_*`
-- Runtime config: `@/lib/envConfig` with validation
-
-## WhatsApp Bridge Server
-
-`whatsapp-bridge/` - Node.js server with `whatsapp-web.js`, runs separately from Vite on port 3001.
+## Useful repo conventions
+- Use `@/*` path alias (configured in Vite, Vitest, and TS config).
+- React files are mostly `.jsx`; TS (`.ts`/`.tsx`) used selectively with strict options enabled.
+- State management: Zustand stores in `src/store/` (useEventStore, useDarkStore, useSettingsStore, useChatStore, useToastStore, useNotificationStore, useWhatsAppSettings).
+- Bridge `package.json` says `"main": "index.js"` but actual entrypoint is `bridge-server.js` — the `start` script targets the correct file.

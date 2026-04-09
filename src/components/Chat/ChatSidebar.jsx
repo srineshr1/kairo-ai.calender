@@ -17,6 +17,13 @@ function TypingDots() {
   )
 }
 
+function formatTime(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+}
+
 function FileAttachment({ attachment }) {
   if (attachment.type === 'image') {
     return (
@@ -45,12 +52,12 @@ function ChatMessage({ msg }) {
   if (msg.role === 'system') {
     return (
       <div 
-        className="py-3"
+        className="py-3 animate-fadeUp"
         role="status"
         aria-live="polite"
       >
         <div className="flex justify-center">
-          <div className="px-3 py-1.5 rounded-full glass-subtle text-center text-xs leading-relaxed theme-text-secondary">
+          <div className="px-3.5 py-1.5 rounded-full glass-subtle text-center text-[11px] leading-relaxed theme-text-secondary tracking-[0.02em]">
             {msg.text}
           </div>
         </div>
@@ -59,34 +66,47 @@ function ChatMessage({ msg }) {
   }
   
   if (msg.role === 'user') {
+    const ts = formatTime(msg.timestamp)
     return (
       <article 
-        className="py-2"
+        className="py-2 animate-fadeUp"
         aria-label="Your message"
       >
         <div className="flex flex-col items-end">
-          <div className="max-w-[82%] rounded-2xl px-4 py-2.5 glass-subtle border border-accent/30 bg-accent/5 shadow-sm">
-            <div className="text-[13px] leading-relaxed font-sans theme-text-primary break-words">
+          <div
+            className="max-w-[86%] rounded-2xl px-4 py-3 border shadow-sm"
+            style={{
+              borderColor: 'color-mix(in srgb, var(--color-accent) 38%, var(--theme-border) 62%)',
+              background: 'linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 14%, var(--theme-panel) 86%), color-mix(in srgb, var(--theme-panel) 92%, transparent))',
+            }}
+          >
+            <div className="text-[13px] leading-[1.55] font-sans theme-text-primary break-words" style={{ whiteSpace: 'pre-wrap' }}>
               {msg.text}
             </div>
             {msg.attachments?.map((attachment, idx) => (
               <FileAttachment key={idx} attachment={attachment} />
             ))}
           </div>
+          {ts && <span className="mt-1 px-1 text-[10px] theme-text-secondary opacity-80">{ts}</span>}
         </div>
       </article>
     )
   }
   
+  const ts = formatTime(msg.timestamp)
   return (
     <article 
-      className="py-2"
+      className="py-2 animate-fadeUp"
       aria-label="AI response"
     >
       <div className="flex gap-2.5 items-start">
         {/* AI Avatar */}
         <div 
-          className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5"
+          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--color-accent) 30%, var(--theme-border) 70%)',
+            background: 'color-mix(in srgb, var(--color-accent) 14%, var(--theme-panel) 86%)',
+          }}
           aria-hidden="true"
         >
           <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -94,10 +114,11 @@ function ChatMessage({ msg }) {
           </svg>
         </div>
         {/* Message Bubble */}
-        <div className="flex-1 max-w-[82%] rounded-2xl px-4 py-2.5 glass-subtle shadow-sm">
-          <div className="text-[13px] leading-relaxed font-sans theme-text-primary break-words" style={{ whiteSpace: 'pre-wrap' }}>
+        <div className="flex-1 max-w-[86%] rounded-2xl px-4 py-3 glass-subtle shadow-sm">
+          <div className="text-[13px] leading-[1.6] font-sans theme-text-primary break-words" style={{ whiteSpace: 'pre-wrap' }}>
             {msg.text}
           </div>
+          {ts && <div className="mt-1.5 text-[10px] theme-text-secondary opacity-80">{ts}</div>}
         </div>
       </div>
     </article>
@@ -366,20 +387,30 @@ export default function ChatSidebar({ onClose }) {
       onMouseLeave={isMobile ? undefined : () => setNearEdge(null)}
     >
       {/* Header */}
-      <header className="px-4 pt-4 pb-3 border-b border-[color:var(--theme-border)] flex-shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span 
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${onlineDot}`} 
-            role="status"
-            aria-label={`AI assistant status: ${onlineStatus}`}
-          />
-          <span className="font-display text-[18px] tracking-tight theme-text-primary">AI</span>
-          {isInWizard && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/20 text-accent font-medium">
-              Importing
-            </span>
-          )}
-        </div>
+      <header
+        className="px-4 pt-4 pb-3 border-b flex-shrink-0"
+        style={{
+          borderColor: 'color-mix(in srgb, var(--theme-border) 72%, transparent)',
+          background: 'linear-gradient(180deg, color-mix(in srgb, var(--theme-panel) 72%, transparent), color-mix(in srgb, var(--theme-panel) 42%, transparent))',
+        }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span 
+              className={`w-2 h-2 rounded-full flex-shrink-0 ${onlineDot}`} 
+              role="status"
+              aria-label={`AI assistant status: ${onlineStatus}`}
+            />
+            <div className="min-w-0">
+              <div className="font-display text-[18px] tracking-tight theme-text-primary leading-none">AI Assistant</div>
+              <div className="text-[10.5px] theme-text-secondary mt-1">{onlineStatus} · Calendar-aware responses</div>
+            </div>
+            {isInWizard && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent font-medium border border-accent/30">
+                Importing
+              </span>
+            )}
+          </div>
         <div className="flex items-center gap-1">
           {isInWizard && (
             <button
@@ -405,6 +436,7 @@ export default function ChatSidebar({ onClose }) {
             </button>
           )}
         </div>
+        </div>
       </header>
 
       {/* Error Banner */}
@@ -429,7 +461,7 @@ export default function ChatSidebar({ onClose }) {
       {/* Messages */}
       <div 
         id={chatRegionId}
-        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 flex flex-col relative ${isDragging ? 'bg-accent/5' : ''}`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 flex flex-col relative custom-scrollbar ${isDragging ? 'bg-accent/5' : ''}`}
         role="log"
         aria-label="Chat messages"
         aria-live="polite"
@@ -475,7 +507,10 @@ export default function ChatSidebar({ onClose }) {
       </div>
 
       {/* Input - extra bottom padding on mobile for MobileNav and safe area */}
-      <div className={`px-4 pt-2 flex-shrink-0 ${isMobile ? 'pb-20' : 'pb-4'}`} style={isMobile ? { paddingBottom: 'max(80px, calc(64px + env(safe-area-inset-bottom)))' } : undefined}>
+      <div
+        className={`px-4 pt-2 flex-shrink-0 ${isMobile ? 'pb-20' : 'pb-4'}`}
+        style={isMobile ? { paddingBottom: 'max(80px, calc(64px + env(safe-area-inset-bottom)))' } : undefined}
+      >
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -488,11 +523,11 @@ export default function ChatSidebar({ onClose }) {
 
         {/* File preview */}
         {selectedFile && (
-          <div className="mb-2 p-2 rounded-lg glass-subtle border border-accent/20 flex items-center gap-2">
+          <div className="mb-2.5 p-2.5 rounded-xl glass-subtle border border-accent/20 flex items-center gap-2.5 animate-fadeUp">
             {filePreview ? (
-              <img src={filePreview} alt="Preview" className="w-12 h-12 object-cover rounded" />
+              <img src={filePreview} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-accent/30" />
             ) : (
-              <div className="w-12 h-12 rounded bg-accent/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/30 flex items-center justify-center">
                 <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
@@ -500,11 +535,11 @@ export default function ChatSidebar({ onClose }) {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-xs theme-text-primary truncate">{selectedFile.name}</p>
-              <p className="text-[10px] theme-text-secondary">
-                {(selectedFile.size / 1024).toFixed(1)} KB
-              </p>
-            </div>
-            <button
+                <p className="text-[10px] theme-text-secondary">
+                  {(selectedFile.size / 1024).toFixed(1)} KB
+                </p>
+              </div>
+              <button
               onClick={clearSelectedFile}
               className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors"
               aria-label="Remove file"
@@ -516,11 +551,14 @@ export default function ChatSidebar({ onClose }) {
           </div>
         )}
 
-        <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 focus-within:border-accent/50 transition-colors glass-subtle">
+        <div
+          className="flex items-center gap-2 border rounded-xl px-2.5 py-2 transition-colors glass-subtle"
+          style={{ borderColor: 'color-mix(in srgb, var(--theme-border) 80%, transparent)' }}
+        >
           {/* Attachment button */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="hover:text-accent transition-colors flex items-center justify-center flex-shrink-0 theme-text-secondary disabled:opacity-50"
+            className="h-8 w-8 rounded-lg hover:text-accent hover:bg-accent/10 transition-colors flex items-center justify-center flex-shrink-0 theme-text-secondary disabled:opacity-50"
             disabled={sending || isInWizard}
             aria-label="Attach timetable image or PDF"
             title="Upload timetable (image or PDF)"
@@ -534,7 +572,7 @@ export default function ChatSidebar({ onClose }) {
           <textarea
             id="chat-input"
             ref={textareaRef}
-            className="flex-1 bg-transparent border-none outline-none text-[13px] theme-text-primary placeholder:text-[color:var(--theme-text-secondary)] resize-none min-h-[20px] max-h-24 leading-relaxed font-sans"
+            className="flex-1 bg-transparent border-none outline-none text-[13px] theme-text-primary placeholder:text-[color:var(--theme-text-secondary)] resize-none min-h-[20px] max-h-28 leading-[1.5] font-sans px-1"
             placeholder={selectedFile ? "Press send to import timetable…" : "Ask about your calendar…"}
             value={input}
             onChange={handleTextarea}
@@ -543,15 +581,26 @@ export default function ChatSidebar({ onClose }) {
             aria-describedby="chat-input-hint"
           />
           <button
-            className="hover:text-accent disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0 text-lg theme-text-secondary"
+            className="h-8 w-8 rounded-lg border transition-colors flex items-center justify-center flex-shrink-0 text-base disabled:text-gray-600 disabled:cursor-not-allowed"
+            style={{
+              color: sending || (!input.trim() && !selectedFile)
+                ? 'var(--theme-text-secondary)'
+                : 'var(--theme-text-primary)',
+              borderColor: input.trim() || selectedFile
+                ? 'color-mix(in srgb, var(--color-accent) 42%, var(--theme-border) 58%)'
+                : 'color-mix(in srgb, var(--theme-border) 85%, transparent)',
+              background: input.trim() || selectedFile
+                ? 'color-mix(in srgb, var(--color-accent) 16%, var(--theme-panel) 84%)'
+                : 'transparent',
+            }}
             onClick={handleSend}
             disabled={sending || (!input.trim() && !selectedFile)}
             aria-label={sending ? 'Sending message...' : selectedFile ? 'Import timetable' : 'Send message'}
           >
-            <span aria-hidden="true">↑</span>
+            <span aria-hidden="true">↗</span>
           </button>
         </div>
-        <p id="chat-input-hint" className="text-[10.5px] text-center mt-1.5 theme-text-secondary">
+        <p id="chat-input-hint" className="text-[10.5px] text-center mt-1.5 theme-text-secondary tracking-[0.02em]">
           {selectedFile ? 'Send to import timetable' : 'Enter to send · Shift+Enter for new line'}
         </p>
       </div>
