@@ -9,6 +9,9 @@ const path = require('path')
 
 const { initUserDir, getUserAuthDir, getUserPublicDir, getAllUserIds, sanitizeUserId, writeUserFile, readUserFile } = require('./utils/userData')
 
+const WebSocket = require('ws')
+const crypto = require('crypto')
+
 const sessions = new Map()
 let messageHandler = null
 
@@ -336,6 +339,189 @@ async function shutdown() {
   console.log('[SessionManager] All sessions shut down')
 }
 
+// WebSocket client manager - tracks authenticated WS connections per user
+const wsClients = new Map() // userId -> Set of WebSocket connections
+
+/**
+ * Authenticate a WebSocket connection
+ * @param {WebSocket} ws - The WebSocket connection
+ * @param {object} credentials - { userId, apiKey }
+ * @returns {boolean} true if authenticated
+ */
+function authenticateWsClient(ws, credentials) {
+  const { userId, apiKey } = credentials
+  if (!userId || !apiKey) return false
+
+  try {
+    const keys = loadApiKeys()
+    const stored = keys[userId]
+    if (!stored) return false
+
+    // Timing-safe comparison
+    const storedBuf = Buffer.from(stored)
+    const suppliedBuf = Buffer.from(apiKey)
+    if (storedBuf.length !== suppliedBuf.length) return false
+    return crypto.timingSafeEqual(storedBuf, suppliedBuf)
+  } catch {
+    return false
+  }
+}
+
+function loadApiKeys() {
+  const fs = require('fs')
+  const path = require('path')
+  const API_KEYS_FILE = path.join(__dirname, 'config', 'api-keys.json')
+  try {
+    return JSON.parse(fs.readFileSync(API_KEYS_FILE, 'utf8'))
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Register an authenticated WebSocket client for a user
+ * @param {string} userId
+ * @param {WebSocket} ws
+ */
+function addWsClient(userId, ws) {
+  if (!wsClients.has(userId)) {
+    wsClients.set(userId, new Set())
+  }
+  wsClients.get(userId).add(ws)
+  console.log(`[WS] Client connected for user ${userId} (${wsClients.get(userId).size} total)`)
+}
+
+/**
+ * Remove a WebSocket client
+ * @param {string} userId
+ * @param {WebSocket} ws
+ */
+function removeWsClient(userId, ws) {
+  const clients = wsClients.get(userId)
+  if (clients) {
+    clients.delete(ws)
+    if (clients.size === 0) {
+      wsClients.delete(userId)
+    }
+  }
+  console.log(`[WS] Client disconnected for user ${userId}`)
+}
+
+/**
+ * Broadcast data to all WebSocket clients of a user
+ * @param {string} userId
+ * @param {object} data - Data to send (will be JSON.stringify'd)
+ */
+function broadcastToUser(userId, data) {
+  const clients = wsClients.get(userId)
+  if (!clients || clients.size === 0) return
+
+  const message = JSON.stringify(data)
+  for (const ws of clients) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(message)
+    }
+  }
+}
+
+/**
+ * Get WebSocket server instance (creates on first call)
+ * @param {http.Server} server - HTTP server to attach to
+ * @returns {WebSocket.Server}
+ */
+let wss = null
+
+function getWebSocketServer(server) {
+  if (wss) return wss
+
+  wss = new WebSocket.Server({ server, path: '/ws' })
+
+  wss.on('connection', (ws, req) => {
+    console.log('[WS] New connection from:', req.socket.remoteAddress)
+
+    // Heartbeat
+    ws.isAlive = true
+    ws.on('pong', () => { ws.isAlive = true })
+
+    let authenticatedUserId = null
+
+    ws.on('message', (rawData) => {
+      try {
+        const data = JSON.parse(rawData.toString())
+
+        // Auth handshake - must be first message
+        if (data.type === 'auth' && !authenticatedUserId) {
+          const valid = authenticateWsClient(ws, { userId: data.userId, apiKey: data.apiKey })
+          if (valid) {
+            authenticatedUserId = data.userId
+            addWsClient(data.userId, ws)
+            ws.send(JSON.stringify({ type: 'auth_ok' }))
+            console.log(`[WS] Authenticated: ${data.userId}`)
+          } else {
+            ws.send(JSON.stringify({ type: 'auth_error', message: 'Invalid credentials' }))
+            ws.close()
+          }
+          return
+        }
+
+        // Reject unauthenticated messages
+        if (!authenticatedUserId) {
+          ws.send(JSON.stringify({ type: 'error', message: 'Not authenticated' }))
+          return
+        }
+
+        // Handle incoming messages from client (e.g., ack, clear confirmation)
+        if (data.type === 'ack') {
+          console.log(`[WS] Ack from ${authenticatedUserId}: received`)
+        }
+      } catch (err) {
+        console.error('[WS] Message parse error:', err.message)
+      }
+    })
+
+    ws.on('close', () => {
+      if (authenticatedUserId) {
+        removeWsClient(authenticatedUserId, ws)
+      }
+    })
+
+    ws.on('error', (err) => {
+      console.error('[WS] Socket error:', err.message)
+      if (authenticatedUserId) {
+        removeWsClient(authenticatedUserId, ws)
+      }
+    })
+  })
+
+  // Heartbeat interval - ping all clients every 30s
+  const heartbeat = setInterval(() => {
+    if (!wss) return
+    wss.clients.forEach((ws) => {
+      if (!ws.isAlive) {
+        ws.terminate()
+        return
+      }
+      ws.isAlive = false
+      ws.ping()
+    })
+  }, 30000)
+
+  wss.on('close', () => clearInterval(heartbeat))
+
+  console.log('[WS] WebSocket server initialized on /ws path')
+  return wss
+}
+
+/**
+ * Broadcast new WhatsApp events to a user's connected clients
+ * Called by whatsappProcessor after events are pushed
+ * @param {string} userId
+ * @param {Array} events - Array of event objects
+ */
+function notifyNewEvents(userId, events) {
+  broadcastToUser(userId, { type: 'new_events', events })
+}
+
 module.exports = {
   initialize,
   setMessageHandler,
@@ -348,5 +534,8 @@ module.exports = {
   getActiveSessions,
   restoreExistingSessions,
   cleanupInactiveSessions,
-  shutdown
+  shutdown,
+  getWebSocketServer,
+  notifyNewEvents,
+  broadcastToUser
 }

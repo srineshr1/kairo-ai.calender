@@ -1,3 +1,4 @@
+const http = require('http')
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
@@ -671,8 +672,12 @@ process.on('SIGTERM', async () => {
   process.exit(0)
 })
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
+// Start server with WebSocket support
+const server = http.createServer(app)
+const { getWebSocketServer } = sessionManager
+getWebSocketServer(server)
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log('')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('  📡 Multi-Tenant WhatsApp Bridge Server')

@@ -2,6 +2,15 @@ const axios = require('axios')
 const { extractEvents } = require('./extractor')
 const { readUserFile, writeUserFile } = require('./utils/userData')
 
+// Notify session manager about new events for WebSocket broadcast
+let notifyNewEvents = null
+try {
+  const sessionManager = require('./sessionManager')
+  notifyNewEvents = sessionManager.notifyNewEvents
+} catch (err) {
+  // Fallback if sessionManager not available
+}
+
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const GROQ_API_KEY = process.env.GROQ_API_KEY
 const TEXT_MODEL = process.env.GROQ_TEXT_MODEL || 'llama-3.3-70b-versatile'
@@ -177,6 +186,10 @@ function pushEvents(userId, events) {
   if (!events.length) return
   const existing = readUserFile(userId, 'events.json') || []
   writeUserFile(userId, 'events.json', [...existing, ...events])
+  // Notify connected clients via WebSocket
+  if (notifyNewEvents) {
+    notifyNewEvents(userId, events)
+  }
 }
 
 async function processIncomingMessage(userId, incomingMessage) {
