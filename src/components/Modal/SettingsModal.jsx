@@ -45,29 +45,30 @@ export default function SettingsModal({ isOpen, onClose }) {
             </button>
           </div>
 
-          <div className="px-6 pt-4 pb-2">
-            <nav className="flex flex-wrap gap-2">
-                {TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-3.5 py-2 rounded-full text-[12px] font-medium theme-tab-pill ${
-                      activeTab === tab.id ? 'theme-tab-pill-active' : ''
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-            </nav>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar animate-fadeUp">
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="px-6 pt-4 pb-3">
+              <nav className="flex flex-wrap gap-2">
+                  {TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-3.5 py-2 rounded-full text-[12px] font-medium theme-tab-pill ${
+                        activeTab === tab.id ? 'theme-tab-pill-active' : ''
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+              </nav>
+            </div>
+            <div className="px-6 pb-6 animate-fadeUp">
               {activeTab === 'general' && <GeneralTab />}
               {activeTab === 'appearance' && <AppearanceTab />}
               {activeTab === 'calendar' && <CalendarTab />}
               {activeTab === 'notifications' && <NotificationsTab />}
               {activeTab === 'whatsapp' && <WhatsAppTab />}
               {activeTab === 'about' && <AboutTab />}
+            </div>
           </div>
         </div>
       </div>

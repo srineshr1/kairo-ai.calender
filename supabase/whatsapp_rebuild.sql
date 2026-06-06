@@ -117,6 +117,10 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_chats;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_events;
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 

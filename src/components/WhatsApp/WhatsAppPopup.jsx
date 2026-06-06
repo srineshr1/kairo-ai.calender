@@ -46,6 +46,7 @@ export default function WhatsAppPopup({ onClose }) {
   const live = useWhatsAppBridgeStatus()
   const isConnected = live.connected
   const phase = live.status
+  const isStatusLoading = live.isLoading
 
   const [error, setError] = useState(null)
   const [view, setView] = useState('groups')
@@ -84,10 +85,26 @@ export default function WhatsAppPopup({ onClose }) {
 
   useEffect(() => { loadChats() }, [loadChats])
 
-  // Refresh chats when status flips to connected
+  // Refresh chats when status flips to connected (bridge may still be writing chats)
   useEffect(() => {
-    if (isConnected) loadChats()
+    if (!isConnected) return
+    loadChats()
+    // Bridge writes chats after getChats() which can take 10-30s on cold start
+    const t = setTimeout(loadChats, 15000)
+    return () => clearTimeout(t)
   }, [isConnected, loadChats])
+
+  // Realtime: chats written by bridge after 'ready' event
+  useEffect(() => {
+    if (!supabase || !user?.id) return
+    const channel = supabase
+      .channel(`whatsapp_chats:${user.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'whatsapp_chats', filter: `user_id=eq.${user.id}`,
+      }, () => { loadChats() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [supabase, user?.id, loadChats])
 
   // Realtime: watched changes from another tab
   useEffect(() => {
@@ -235,7 +252,7 @@ export default function WhatsAppPopup({ onClose }) {
             </div>
           )}
 
-          {!isConnected && (
+          {!isConnected && !isStatusLoading && (
             <div className={`rounded-xl border p-4 ${cardClass}`}>
               {isMobile && phase === 'DISCONNECTED' ? (
                 <div className="flex flex-col items-center py-6 text-center">

@@ -23,10 +23,12 @@ export function useWhatsAppBridgeStatus() {
   const { user } = useAuth()
   const supabase = getSupabaseClient()
   const [status, setStatus] = useState(DEFAULT_STATUS)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     if (!supabase || !user?.id) {
       setStatus(DEFAULT_STATUS)
+      setIsLoading(false)
       return
     }
 
@@ -39,7 +41,10 @@ export function useWhatsAppBridgeStatus() {
         .eq('user_id', user.id)
         .maybeSingle()
       if (error) console.warn('[Status] load failed:', error.message)
-      if (!cancelled) setStatus(rowToStatus(data))
+      if (!cancelled) {
+        setStatus(rowToStatus(data))
+        setIsLoading(false)
+      }
     }
 
     loadInitial()
@@ -67,5 +72,5 @@ export function useWhatsAppBridgeStatus() {
     }
   }, [supabase, user?.id])
 
-  return status
+  return { ...status, isLoading }
 }
