@@ -30,6 +30,10 @@ function getAdminSupabase() {
 }
 
 function getUserSupabase(userId) {
+  if (!SUPABASE_JWT_SECRET) {
+    console.warn('[Supabase] SUPABASE_JWT_SECRET not set — falling back to admin client for userId:', userId)
+    return getAdminSupabase()
+  }
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error('Missing SUPABASE_URL, SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY env vars')
   }
@@ -49,9 +53,10 @@ function getUserSupabase(userId) {
 }
 
 function signUserJwt(userId) {
+  const secret = process.env.SUPABASE_JWT_SECRET || SUPABASE_SERVICE_ROLE_KEY
   return jwt.sign(
     { sub: userId, role: 'authenticated', aud: 'authenticated' },
-    SUPABASE_SERVICE_ROLE_KEY,
+    secret,
     { algorithm: 'HS256', expiresIn: '1h' },
   )
 }

@@ -42,7 +42,7 @@ const corsOptions = {
   origin(origin, cb) {
     if (!origin) return cb(null, true)
     if (filteredOrigins.includes(origin)) return cb(null, true)
-    if (/\.onrender\.com$/.test(origin) || /\.ngrok-free\.dev$/.test(origin) || /\.ngrok\.io$/.test(origin)) {
+    if (/\.onrender\.com$/.test(origin) || /\.ngrok-free\.dev$/.test(origin) || /\.ngrok\.io$/.test(origin) || /\.nip\.io$/.test(origin)) {
       return cb(null, true)
     }
     console.warn('[CORS] blocked origin:', origin)
