@@ -1,0 +1,95 @@
+- generic [ref=e3]:
+  - link "Skip to main content" [ref=e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - main [ref=e107]:
+    - banner [ref=e108]:
+      - button "Open menu" [ref=e505] [cursor=pointer]:
+        - img [ref=e507]
+      - navigation "Calendar view" [ref=e114]:
+        - tablist [ref=e115]:
+          - tab "Day" [ref=e116] [cursor=pointer]
+          - tab "Week" [selected] [ref=e117] [cursor=pointer]
+          - tab "Month" [ref=e118] [cursor=pointer]
+      - toolbar "Calendar actions" [ref=e119]:
+        - button "Switch to light mode" [pressed] [ref=e148] [cursor=pointer]:
+          - img [ref=e150]
+        - button "Add new event" [active] [ref=e152] [cursor=pointer]:
+          - img [ref=e154]
+        - button "Notifications" [ref=e162] [cursor=pointer]:
+          - img [ref=e164]
+        - button "Settings" [ref=e166] [cursor=pointer]:
+          - img [ref=e168]
+    - generic [ref=e171]:
+      - generic [ref=e172]:
+        - button "Previous week" [ref=e173] [cursor=pointer]:
+          - img [ref=e175]
+        - heading "May 31 – 6" [level=2] [ref=e177]
+        - button "Next week" [ref=e178] [cursor=pointer]:
+          - img [ref=e180]
+        - button "Now" [ref=e182] [cursor=pointer]
+        - button "Sleep zone" [ref=e183] [cursor=pointer]:
+          - img [ref=e184]
+          - text: Sleep zone
+      - generic [ref=e186]:
+        - generic [ref=e187]:
+          - generic [ref=e188]:
+            - button "31 Sun" [ref=e190] [cursor=pointer]:
+              - generic [ref=e191]: "31"
+              - generic [ref=e192]: Sun
+            - button "1 Mon" [ref=e193] [cursor=pointer]:
+              - generic [ref=e194]: "1"
+              - generic [ref=e195]: Mon
+            - button "2 Tue" [ref=e196] [cursor=pointer]:
+              - generic [ref=e197]: "2"
+              - generic [ref=e198]: Tue
+            - button "3 Wed" [ref=e199] [cursor=pointer]:
+              - generic [ref=e200]: "3"
+              - generic [ref=e201]: Wed
+            - button "4 Thu" [ref=e202] [cursor=pointer]:
+              - generic [ref=e203]: "4"
+              - generic [ref=e204]: Thu
+            - button "5 Fri" [ref=e205] [cursor=pointer]:
+              - generic [ref=e206]: "5"
+              - generic [ref=e207]: Fri
+            - button "6 Sat" [ref=e208] [cursor=pointer]:
+              - generic [ref=e209]: "6"
+              - generic [ref=e210]: Sat
+          - generic [ref=e212]:
+            - generic [ref=e214]: 00:00
+            - generic [ref=e216]: 01:00
+            - generic [ref=e218]: 02:00
+            - generic [ref=e220]: 03:00
+            - generic [ref=e222]: 04:00
+            - generic [ref=e224]: 05:00
+            - generic [ref=e226]: 06:00
+            - generic [ref=e228]: 07:00
+            - generic [ref=e230]: 08:00
+            - generic [ref=e232]: 09:00
+            - generic [ref=e234]: 10:00
+            - generic [ref=e236]: 11:00
+            - generic [ref=e238]: 12:00
+            - generic [ref=e240]: 13:00
+            - generic [ref=e242]: 14:00
+            - generic [ref=e244]: 15:00
+            - generic [ref=e246]: 16:00
+            - generic [ref=e248]: 17:00
+            - generic [ref=e250]: 18:00
+            - generic [ref=e252]: 19:00
+            - generic [ref=e254]: 20:00
+            - generic [ref=e256]: 21:00
+            - generic [ref=e258]: 22:00
+            - generic [ref=e260]: 23:00
+        - status [ref=e436]
+  - navigation "Mobile navigation" [ref=e509]:
+    - button "Open sidebar" [ref=e510] [cursor=pointer]:
+      - img [ref=e512]
+      - generic [ref=e514]: Tasks
+    - button "View calendar" [pressed] [ref=e515] [cursor=pointer]:
+      - img [ref=e517]
+      - generic [ref=e519]: Calendar
+    - button "Go to today" [ref=e520] [cursor=pointer]:
+      - img [ref=e522]
+      - generic [ref=e525]: Today
+    - button "Open AI chat" [ref=e526] [cursor=pointer]:
+      - img [ref=e528]
+      - generic [ref=e530]: AI

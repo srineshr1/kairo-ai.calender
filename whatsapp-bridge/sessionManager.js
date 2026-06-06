@@ -131,7 +131,7 @@ function buildClient(userId) {
     console.log(`[Session] Ready ${userId}`)
     writeStatus(userId, { status: 'CONNECTED', qr: null, message: 'Connected', connected: true })
 
-    try {
+    const fetchAndWriteChats = async () => {
       const chats = await client.getChats()
       const groups = chats.filter((c) => c.isGroup).map((c) => ({
         id: c.id._serialized,
@@ -149,8 +149,20 @@ function buildClient(userId) {
       }))
       await writeChats(userId, [...groups, ...contacts])
       console.log(`[Session] ${userId}: ${groups.length} groups, ${contacts.length} contacts`)
-    } catch (err) {
-      console.error(`[Session] getChats failed for ${userId}:`, err.message)
+    }
+
+    const MAX_RETRIES = 3
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (attempt > 1) await new Promise((r) => setTimeout(r, 10000))
+        await fetchAndWriteChats()
+        break
+      } catch (err) {
+        console.error(`[Session] getChats attempt ${attempt}/${MAX_RETRIES} failed for ${userId}:`, err.message)
+        if (attempt === MAX_RETRIES) {
+          writeStatus(userId, { status: 'CONNECTED', qr: null, message: 'Connected (chats loading failed — refresh to retry)', connected: true })
+        }
+      }
     }
   })
 

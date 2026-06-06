@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import getSupabaseClient from '../lib/supabase'
 
@@ -8,6 +8,8 @@ const DEFAULT_STATUS = {
   qr: null,
   message: 'Disconnected',
 }
+
+const POLL_INTERVAL = 3000
 
 function rowToStatus(row) {
   if (!row) return DEFAULT_STATUS
@@ -24,6 +26,17 @@ export function useWhatsAppBridgeStatus() {
   const supabase = getSupabaseClient()
   const [status, setStatus] = useState(DEFAULT_STATUS)
   const [isLoading, setIsLoading] = useState(true)
+  const pollRef = useRef(null)
+
+  const fetchStatus = useCallback(async () => {
+    if (!supabase || !user?.id) return
+    const { data } = await supabase
+      .from('whatsapp_status')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    setStatus(rowToStatus(data))
+  }, [supabase, user?.id])
 
   useEffect(() => {
     if (!supabase || !user?.id) {
@@ -71,6 +84,17 @@ export function useWhatsAppBridgeStatus() {
       supabase.removeChannel(channel)
     }
   }, [supabase, user?.id])
+
+  // Poll while in transitional states (QR shown, connecting, authenticating)
+  useEffect(() => {
+    const needsPoll = !status.connected && status.status !== 'DISCONNECTED' && status.status !== 'FAILED'
+    if (needsPoll) {
+      pollRef.current = setInterval(fetchStatus, POLL_INTERVAL)
+    } else {
+      clearInterval(pollRef.current)
+    }
+    return () => clearInterval(pollRef.current)
+  }, [status.status, status.connected, fetchStatus])
 
   return { ...status, isLoading }
 }

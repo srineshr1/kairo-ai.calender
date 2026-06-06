@@ -1,0 +1,192 @@
+- generic [ref=e3]:
+  - link "Skip to main content" [ref=e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary "Sidebar navigation" [ref=e6]:
+    - generic [ref=e8]: kairo
+    - generic [ref=e9]:
+      - button "Today" [expanded] [ref=e10] [cursor=pointer]:
+        - generic [ref=e11]: Today
+        - img [ref=e13]
+      - paragraph [ref=e18]: No events today
+    - generic [ref=e19]:
+      - button "This month" [expanded] [ref=e20] [cursor=pointer]:
+        - generic [ref=e21]: This month
+        - img [ref=e23]
+      - generic [ref=e28]:
+        - button "Add new" [ref=e30] [cursor=pointer]:
+          - img [ref=e32]
+          - text: Add new
+        - paragraph [ref=e34]: Double-click to mark done
+    - generic [ref=e35]:
+      - button "Quick notes" [ref=e36] [cursor=pointer]:
+        - generic [ref=e37]: Quick notes
+        - img [ref=e39]
+      - textbox "Quick notes" [ref=e42]:
+        - /placeholder: Jot something down…
+    - button "Add new section" [ref=e43] [cursor=pointer]:
+      - img [ref=e45]
+      - text: Add section
+    - button "Import timetable from image or PDF" [ref=e47] [cursor=pointer]:
+      - img [ref=e48]
+      - text: Import Timetable
+    - separator [ref=e50]
+    - navigation "Mini calendar" [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e53]: June 2026
+        - generic [ref=e54]:
+          - button "Go to May 2026" [ref=e55] [cursor=pointer]:
+            - img [ref=e57]
+          - button "Go to July 2026" [ref=e59] [cursor=pointer]:
+            - img [ref=e61]
+      - grid "June 2026" [ref=e63]:
+        - row "Monday Tuesday Wednesday Thursday Friday Saturday Sunday" [ref=e64]:
+          - columnheader "Monday" [ref=e65]: M
+          - columnheader "Tuesday" [ref=e66]: T
+          - columnheader "Wednesday" [ref=e67]: W
+          - columnheader "Thursday" [ref=e68]: T
+          - columnheader "Friday" [ref=e69]: F
+          - columnheader "Saturday" [ref=e70]: S
+          - columnheader "Sunday" [ref=e71]: S
+        - gridcell "June 1, 2026" [ref=e72] [cursor=pointer]: "1"
+        - gridcell "June 2, 2026" [ref=e73] [cursor=pointer]: "2"
+        - gridcell "June 3, 2026" [ref=e74] [cursor=pointer]: "3"
+        - gridcell "June 4, 2026" [ref=e75] [cursor=pointer]: "4"
+        - gridcell "June 5, 2026" [ref=e76] [cursor=pointer]: "5"
+        - gridcell "June 6, 2026" [ref=e77] [cursor=pointer]: "6"
+        - gridcell "June 7, 2026 (today)" [ref=e78] [cursor=pointer]: "7"
+        - gridcell "June 8, 2026" [ref=e79] [cursor=pointer]: "8"
+        - gridcell "June 9, 2026" [ref=e80] [cursor=pointer]: "9"
+        - gridcell "June 10, 2026" [ref=e81] [cursor=pointer]: "10"
+        - gridcell "June 11, 2026" [ref=e82] [cursor=pointer]: "11"
+        - gridcell "June 12, 2026" [ref=e83] [cursor=pointer]: "12"
+        - gridcell "June 13, 2026" [ref=e84] [cursor=pointer]: "13"
+        - gridcell "June 14, 2026" [ref=e85] [cursor=pointer]: "14"
+        - gridcell "June 15, 2026" [ref=e86] [cursor=pointer]: "15"
+        - gridcell "June 16, 2026" [ref=e87] [cursor=pointer]: "16"
+        - gridcell "June 17, 2026" [ref=e88] [cursor=pointer]: "17"
+        - gridcell "June 18, 2026" [ref=e89] [cursor=pointer]: "18"
+        - gridcell "June 19, 2026" [ref=e90] [cursor=pointer]: "19"
+        - gridcell "June 20, 2026" [ref=e91] [cursor=pointer]: "20"
+        - gridcell "June 21, 2026" [ref=e92] [cursor=pointer]: "21"
+        - gridcell "June 22, 2026" [ref=e93] [cursor=pointer]: "22"
+        - gridcell "June 23, 2026" [ref=e94] [cursor=pointer]: "23"
+        - gridcell "June 24, 2026" [ref=e95] [cursor=pointer]: "24"
+        - gridcell "June 25, 2026" [ref=e96] [cursor=pointer]: "25"
+        - gridcell "June 26, 2026" [ref=e97] [cursor=pointer]: "26"
+        - gridcell "June 27, 2026" [ref=e98] [cursor=pointer]: "27"
+        - gridcell "June 28, 2026" [ref=e99] [cursor=pointer]: "28"
+        - gridcell "June 29, 2026" [ref=e100] [cursor=pointer]: "29"
+        - gridcell "June 30, 2026" [ref=e101] [cursor=pointer]: "30"
+        - gridcell "July 1, 2026" [ref=e102] [cursor=pointer]: "1"
+        - gridcell "July 2, 2026" [ref=e103] [cursor=pointer]: "2"
+        - gridcell "July 3, 2026" [ref=e104] [cursor=pointer]: "3"
+        - gridcell "July 4, 2026" [ref=e105] [cursor=pointer]: "4"
+        - gridcell "July 5, 2026" [ref=e106] [cursor=pointer]: "5"
+  - main [ref=e107]:
+    - banner [ref=e108]:
+      - generic [ref=e109]:
+        - img [ref=e111]
+        - searchbox "Search events" [ref=e113]
+      - navigation "Calendar view" [ref=e114]:
+        - tablist [ref=e115]:
+          - tab "Day" [ref=e116] [cursor=pointer]
+          - tab "Week" [selected] [ref=e117] [cursor=pointer]
+          - tab "Month" [ref=e118] [cursor=pointer]
+      - toolbar "Calendar actions" [ref=e119]:
+        - button "Drag and drop is enabled. Click to disable." [pressed] [ref=e120] [cursor=pointer]: "Drag & Drop: On"
+        - generic [ref=e121]:
+          - button "WhatsApp Connected" [expanded] [active] [ref=e122] [cursor=pointer]:
+            - img [ref=e123]
+          - generic [ref=e442]:
+            - generic [ref=e443]:
+              - generic [ref=e444]:
+                - heading "WhatsApp" [level=3] [ref=e445]
+                - generic [ref=e447]: Connected
+              - button [ref=e448] [cursor=pointer]:
+                - img [ref=e449]
+            - generic [ref=e451]:
+              - generic [ref=e452]:
+                - paragraph [ref=e453]: Connected
+                - generic [ref=e454]:
+                  - button "Disconnect" [ref=e455] [cursor=pointer]
+                  - button "Logout" [ref=e456] [cursor=pointer]
+              - generic [ref=e457]:
+                - generic [ref=e458]:
+                  - paragraph [ref=e459]: No groups or chats monitored
+                  - button "Add" [ref=e460] [cursor=pointer]:
+                    - img [ref=e461]
+                    - text: Add
+                - paragraph [ref=e463]: Click "Add" to select groups or contacts to monitor for events.
+        - button "Switch to light mode" [pressed] [ref=e148] [cursor=pointer]:
+          - img [ref=e150]
+        - button "Add new event" [ref=e152] [cursor=pointer]:
+          - img [ref=e154]
+        - button "User menu for pubgliverisgood@gmail.com" [ref=e157] [cursor=pointer]:
+          - img [ref=e159]
+        - button "Notifications" [ref=e162] [cursor=pointer]:
+          - img [ref=e164]
+        - button "Settings" [ref=e166] [cursor=pointer]:
+          - img [ref=e168]
+    - generic [ref=e171]:
+      - generic [ref=e172]:
+        - button "Previous week" [ref=e173] [cursor=pointer]:
+          - img [ref=e175]
+        - heading "May 31 – 6" [level=2] [ref=e177]
+        - button "Next week" [ref=e178] [cursor=pointer]:
+          - img [ref=e180]
+        - button "Now" [ref=e182] [cursor=pointer]
+        - button "Sleep zone" [ref=e183] [cursor=pointer]:
+          - img [ref=e184]
+          - text: Sleep zone
+      - generic [ref=e186]:
+        - generic [ref=e187]:
+          - generic [ref=e188]:
+            - button "31 Sun" [ref=e190] [cursor=pointer]:
+              - generic [ref=e191]: "31"
+              - generic [ref=e192]: Sun
+            - button "1 Mon" [ref=e193] [cursor=pointer]:
+              - generic [ref=e194]: "1"
+              - generic [ref=e195]: Mon
+            - button "2 Tue" [ref=e196] [cursor=pointer]:
+              - generic [ref=e197]: "2"
+              - generic [ref=e198]: Tue
+            - button "3 Wed" [ref=e199] [cursor=pointer]:
+              - generic [ref=e200]: "3"
+              - generic [ref=e201]: Wed
+            - button "4 Thu" [ref=e202] [cursor=pointer]:
+              - generic [ref=e203]: "4"
+              - generic [ref=e204]: Thu
+            - button "5 Fri" [ref=e205] [cursor=pointer]:
+              - generic [ref=e206]: "5"
+              - generic [ref=e207]: Fri
+            - button "6 Sat" [ref=e208] [cursor=pointer]:
+              - generic [ref=e209]: "6"
+              - generic [ref=e210]: Sat
+          - generic [ref=e212]:
+            - generic [ref=e214]: 00:00
+            - generic [ref=e216]: 01:00
+            - generic [ref=e218]: 02:00
+            - generic [ref=e220]: 03:00
+            - generic [ref=e222]: 04:00
+            - generic [ref=e224]: 05:00
+            - generic [ref=e226]: 06:00
+            - generic [ref=e228]: 07:00
+            - generic [ref=e230]: 08:00
+            - generic [ref=e232]: 09:00
+            - generic [ref=e234]: 10:00
+            - generic [ref=e236]: 11:00
+            - generic [ref=e238]: 12:00
+            - generic [ref=e240]: 13:00
+            - generic [ref=e242]: 14:00
+            - generic [ref=e244]: 15:00
+            - generic [ref=e246]: 16:00
+            - generic [ref=e248]: 17:00
+            - generic [ref=e250]: 18:00
+            - generic [ref=e252]: 19:00
+            - generic [ref=e254]: 20:00
+            - generic [ref=e256]: 21:00
+            - generic [ref=e258]: 22:00
+            - generic [ref=e260]: 23:00
+        - status [ref=e436]
+  - button "Open AI chat" [ref=e438] [cursor=pointer]:
+    - img [ref=e439]

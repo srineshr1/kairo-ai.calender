@@ -1,0 +1,197 @@
+- generic [ref=e22]:
+  - link "Skip to main content" [ref=e23] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary "Sidebar navigation" [ref=e25]:
+    - generic [ref=e27]: kairo
+    - generic [ref=e28]:
+      - button "Today" [expanded] [ref=e29] [cursor=pointer]:
+        - generic [ref=e30]: Today
+        - img [ref=e32]
+      - paragraph [ref=e37]: No events today
+    - generic [ref=e38]:
+      - button "This month" [expanded] [ref=e39] [cursor=pointer]:
+        - generic [ref=e40]: This month
+        - img [ref=e42]
+      - generic [ref=e47]:
+        - button "Add new" [ref=e49] [cursor=pointer]:
+          - img [ref=e51]
+          - text: Add new
+        - paragraph [ref=e53]: Double-click to mark done
+    - generic [ref=e54]:
+      - button "Quick notes" [ref=e55] [cursor=pointer]:
+        - generic [ref=e56]: Quick notes
+        - img [ref=e58]
+      - textbox "Quick notes" [ref=e61]:
+        - /placeholder: Jot something down…
+    - button "Add new section" [ref=e62] [cursor=pointer]:
+      - img [ref=e64]
+      - text: Add section
+    - button "Import timetable from image or PDF" [ref=e66] [cursor=pointer]:
+      - img [ref=e67]
+      - text: Import Timetable
+    - separator [ref=e69]
+    - navigation "Mini calendar" [ref=e70]:
+      - generic [ref=e71]:
+        - generic [ref=e72]: June 2026
+        - generic [ref=e73]:
+          - button "Go to May 2026" [ref=e74] [cursor=pointer]:
+            - img [ref=e76]
+          - button "Go to July 2026" [ref=e78] [cursor=pointer]:
+            - img [ref=e80]
+      - grid "June 2026" [ref=e82]:
+        - row "Monday Tuesday Wednesday Thursday Friday Saturday Sunday" [ref=e83]:
+          - columnheader "Monday" [ref=e84]: M
+          - columnheader "Tuesday" [ref=e85]: T
+          - columnheader "Wednesday" [ref=e86]: W
+          - columnheader "Thursday" [ref=e87]: T
+          - columnheader "Friday" [ref=e88]: F
+          - columnheader "Saturday" [ref=e89]: S
+          - columnheader "Sunday" [ref=e90]: S
+        - gridcell "June 1, 2026" [ref=e91] [cursor=pointer]: "1"
+        - gridcell "June 2, 2026" [ref=e92] [cursor=pointer]: "2"
+        - gridcell "June 3, 2026" [ref=e93] [cursor=pointer]: "3"
+        - gridcell "June 4, 2026" [ref=e94] [cursor=pointer]: "4"
+        - gridcell "June 5, 2026" [ref=e95] [cursor=pointer]: "5"
+        - gridcell "June 6, 2026 (today)" [ref=e96] [cursor=pointer]: "6"
+        - gridcell "June 7, 2026" [ref=e97] [cursor=pointer]: "7"
+        - gridcell "June 8, 2026" [ref=e98] [cursor=pointer]: "8"
+        - gridcell "June 9, 2026" [ref=e99] [cursor=pointer]: "9"
+        - gridcell "June 10, 2026" [ref=e100] [cursor=pointer]: "10"
+        - gridcell "June 11, 2026" [ref=e101] [cursor=pointer]: "11"
+        - gridcell "June 12, 2026" [ref=e102] [cursor=pointer]: "12"
+        - gridcell "June 13, 2026" [ref=e103] [cursor=pointer]: "13"
+        - gridcell "June 14, 2026" [ref=e104] [cursor=pointer]: "14"
+        - gridcell "June 15, 2026" [ref=e105] [cursor=pointer]: "15"
+        - gridcell "June 16, 2026" [ref=e106] [cursor=pointer]: "16"
+        - gridcell "June 17, 2026" [ref=e107] [cursor=pointer]: "17"
+        - gridcell "June 18, 2026" [ref=e108] [cursor=pointer]: "18"
+        - gridcell "June 19, 2026" [ref=e109] [cursor=pointer]: "19"
+        - gridcell "June 20, 2026" [ref=e110] [cursor=pointer]: "20"
+        - gridcell "June 21, 2026" [ref=e111] [cursor=pointer]: "21"
+        - gridcell "June 22, 2026" [ref=e112] [cursor=pointer]: "22"
+        - gridcell "June 23, 2026" [ref=e113] [cursor=pointer]: "23"
+        - gridcell "June 24, 2026" [ref=e114] [cursor=pointer]: "24"
+        - gridcell "June 25, 2026" [ref=e115] [cursor=pointer]: "25"
+        - gridcell "June 26, 2026" [ref=e116] [cursor=pointer]: "26"
+        - gridcell "June 27, 2026" [ref=e117] [cursor=pointer]: "27"
+        - gridcell "June 28, 2026" [ref=e118] [cursor=pointer]: "28"
+        - gridcell "June 29, 2026" [ref=e119] [cursor=pointer]: "29"
+        - gridcell "June 30, 2026" [ref=e120] [cursor=pointer]: "30"
+        - gridcell "July 1, 2026" [ref=e121] [cursor=pointer]: "1"
+        - gridcell "July 2, 2026" [ref=e122] [cursor=pointer]: "2"
+        - gridcell "July 3, 2026" [ref=e123] [cursor=pointer]: "3"
+        - gridcell "July 4, 2026" [ref=e124] [cursor=pointer]: "4"
+        - gridcell "July 5, 2026" [ref=e125] [cursor=pointer]: "5"
+  - main [ref=e126]:
+    - banner [ref=e127]:
+      - generic [ref=e128]:
+        - img [ref=e130]
+        - searchbox "Search events" [ref=e132]
+      - navigation "Calendar view" [ref=e133]:
+        - tablist [ref=e134]:
+          - tab "Day" [ref=e135] [cursor=pointer]
+          - tab "Week" [selected] [ref=e136] [cursor=pointer]
+          - tab "Month" [ref=e137] [cursor=pointer]
+      - toolbar "Calendar actions" [ref=e138]:
+        - button "Drag and drop is enabled. Click to disable." [pressed] [ref=e139] [cursor=pointer]: "Drag & Drop: On"
+        - button "WhatsApp Disconnected" [ref=e141] [cursor=pointer]:
+          - img [ref=e142]
+        - button "Switch to light mode" [pressed] [ref=e145] [cursor=pointer]:
+          - img [ref=e147]
+        - button "Add new event" [ref=e149] [cursor=pointer]:
+          - img [ref=e151]
+        - button "User menu for test2@kairo.dev" [ref=e154] [cursor=pointer]:
+          - img [ref=e156]
+        - button "Notifications" [ref=e159] [cursor=pointer]:
+          - img [ref=e161]
+        - button "Settings" [ref=e163] [cursor=pointer]:
+          - img [ref=e165]
+    - generic [ref=e168]:
+      - generic [ref=e169]:
+        - button "Previous week" [ref=e170] [cursor=pointer]:
+          - img [ref=e172]
+        - heading "May 31 – 6" [level=2] [ref=e174]
+        - button "Next week" [ref=e175] [cursor=pointer]:
+          - img [ref=e177]
+        - button "Now" [ref=e179] [cursor=pointer]
+        - button "Sleep zone" [ref=e180] [cursor=pointer]:
+          - img [ref=e181]
+          - text: Sleep zone
+      - generic [ref=e183]:
+        - generic [ref=e184]:
+          - generic [ref=e185]:
+            - button "31 Sun" [ref=e187] [cursor=pointer]:
+              - generic [ref=e188]: "31"
+              - generic [ref=e189]: Sun
+            - button "1 Mon" [ref=e190] [cursor=pointer]:
+              - generic [ref=e191]: "1"
+              - generic [ref=e192]: Mon
+            - button "2 Tue" [ref=e193] [cursor=pointer]:
+              - generic [ref=e194]: "2"
+              - generic [ref=e195]: Tue
+            - button "3 Wed" [ref=e196] [cursor=pointer]:
+              - generic [ref=e197]: "3"
+              - generic [ref=e198]: Wed
+            - button "4 Thu" [ref=e199] [cursor=pointer]:
+              - generic [ref=e200]: "4"
+              - generic [ref=e201]: Thu
+            - button "5 Fri" [ref=e202] [cursor=pointer]:
+              - generic [ref=e203]: "5"
+              - generic [ref=e204]: Fri
+            - button "6 Sat" [ref=e205] [cursor=pointer]:
+              - generic [ref=e206]: "6"
+              - generic [ref=e207]: Sat
+          - generic [ref=e209]:
+            - generic [ref=e211]: 00:00
+            - generic [ref=e213]: 01:00
+            - generic [ref=e215]: 02:00
+            - generic [ref=e217]: 03:00
+            - generic [ref=e219]: 04:00
+            - generic [ref=e221]: 05:00
+            - generic [ref=e223]: 06:00
+            - generic [ref=e225]: 07:00
+            - generic [ref=e227]: 08:00
+            - generic [ref=e229]: 09:00
+            - generic [ref=e231]: 10:00
+            - generic [ref=e233]: 11:00
+            - generic [ref=e235]: 12:00
+            - generic [ref=e237]: 13:00
+            - generic [ref=e239]: 14:00
+            - generic [ref=e241]: 15:00
+            - generic [ref=e243]: 16:00
+            - generic [ref=e245]: 17:00
+            - generic [ref=e247]: 18:00
+            - generic [ref=e249]: 19:00
+            - generic [ref=e251]: 20:00
+            - generic [ref=e253]: 21:00
+            - generic [ref=e255]: 22:00
+            - generic [ref=e257]: 23:00
+        - status [ref=e433]
+  - button "Open AI chat" [ref=e435] [cursor=pointer]:
+    - img [ref=e436]
+  - complementary "AI chat assistant" [ref=e439]:
+    - generic [ref=e440]:
+      - generic [ref=e441]:
+        - img [ref=e443]
+        - generic [ref=e445]:
+          - generic [ref=e446]: AI Assistant
+          - generic [ref=e449]: Connecting
+      - button "Close chat" [ref=e451] [cursor=pointer]:
+        - img [ref=e452]
+    - log "Chat messages" [ref=e454]:
+      - article "Your message" [ref=e455]:
+        - generic [ref=e458]: What's on my schedule today?
+      - article "AI response" [ref=e459]:
+        - generic [ref=e460]:
+          - img [ref=e462]
+          - generic [ref=e465]: You have no events scheduled for today.
+    - generic [ref=e466]:
+      - generic [ref=e467]:
+        - button "Attach timetable image or PDF" [ref=e468] [cursor=pointer]:
+          - img [ref=e469]
+        - generic [ref=e471]: Message to AI assistant
+        - textbox "Message to AI assistant" [ref=e472]:
+          - /placeholder: Message AI Assistant...
+        - button "Send message" [disabled] [ref=e473]:
+          - img [ref=e474]
+      - paragraph [ref=e476]: AI can make mistakes. Verify important information.

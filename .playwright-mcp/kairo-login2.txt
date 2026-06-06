@@ -1,0 +1,25 @@
+- generic [ref=e23] [box=387,216,448,488]:
+  - generic [ref=e24] [box=419,248,384,64]:
+    - heading "Sign in to AI Calendar" [level=2] [ref=e25] [box=419,248,384,36]
+    - paragraph [ref=e26] [box=419,292,384,20]:
+      - text: Or
+      - link "create a new account" [ref=e27] [cursor=pointer] [box=549,293,143,18]:
+        - /url: /signup
+  - generic [ref=e28] [box=419,344,384,328]:
+    - generic [ref=e29] [box=419,344,384,140]:
+      - generic [ref=e30] [box=419,344,384,62]:
+        - generic [ref=e31] [box=419,344,384,20]: Email address
+        - textbox "Email address" [ref=e32] [box=419,368,384,38]:
+          - /placeholder: you@example.com
+      - generic [ref=e33] [box=419,422,384,62]:
+        - generic [ref=e34] [box=419,422,384,20]: Password
+        - textbox "Password" [ref=e35] [box=419,446,384,38]:
+          - /placeholder: ••••••••
+    - link "Forgot your password?" [ref=e38] [cursor=pointer] [box=419,509,150,18]:
+      - /url: /forgot-password
+    - generic [ref=e39] [box=419,552,384,120]:
+      - button "Sign in" [ref=e40] [cursor=pointer] [box=419,552,384,38]
+      - generic [ref=e45] [box=549,602,124,20]: Or continue with
+      - button "Sign in with Google" [ref=e46] [cursor=pointer] [box=419,634,384,38]:
+        - img [ref=e47] [box=534,643,20,20]
+        - text: Sign in with Google

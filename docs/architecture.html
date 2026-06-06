@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kairo Architecture</title>
+<style>
+  :root {
+    --bg:        #08080d;
+    --bg-card:   #0f0f18;
+    --bg-elevated:#161622;
+    --border:    #1e1e2e;
+    --border-hover: #2a2a3e;
+    --text:      #e4e4ef;
+    --text-secondary: #8888a0;
+    --teal:      #14b8a6;
+    --teal-dim:  rgba(20,184,166,0.12);
+    --blue:      #3b82f6;
+    --blue-dim:  rgba(59,130,246,0.12);
+    --amber:     #f59e0b;
+    --amber-dim: rgba(245,158,11,0.12);
+    --rose:      #f43f5e;
+    --rose-dim:  rgba(244,63,94,0.12);
+    --green:     #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --purple:    #a855f7;
+    --purple-dim:rgba(168,85,247,0.12);
+    --radius:    12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(8,8,13,0.85); backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 48px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .topbar .mark {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--teal), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px; color: #fff;
+  }
+  .topbar h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  .topbar .sub { font-size: 12px; color: var(--text-secondary); margin-left: 4px; }
+
+  section { padding: 44px 48px; max-width: 1200px; margin: 0 auto; }
+  section + section { border-top: 1px solid var(--border); }
+  .section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--teal); margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px;
+  }
+  .section-desc { color: var(--text-secondary); font-size: 14px; max-width: 640px; margin-bottom: 32px; }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    animation: fadeIn 0.5s ease backwards;
+  }
+  .card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card:nth-child(1) { animation-delay: 0s; }
+  .card:nth-child(2) { animation-delay: 0.08s; }
+  .card:nth-child(3) { animation-delay: 0.16s; }
+  .card:nth-child(4) { animation-delay: 0.24s; }
+  .card:nth-child(5) { animation-delay: 0.32s; }
+  .card:nth-child(6) { animation-delay: 0.4s; }
+
+  .card-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 16px; font-weight: 700;
+  }
+  .card h4 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .card p  { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+  .card .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .card .chip {
+    font-size: 10px; font-weight: 500; padding: 3px 10px;
+    border-radius: 20px; background: var(--bg-elevated);
+    color: var(--text-secondary); border: 1px solid var(--border);
+  }
+
+  .card.accent-teal  { border-left: 2px solid var(--teal); }
+  .card.accent-teal  .card-icon { background: var(--teal-dim);  color: var(--teal); }
+  .card.accent-blue  { border-left: 2px solid var(--blue); }
+  .card.accent-blue  .card-icon { background: var(--blue-dim);  color: var(--blue); }
+  .card.accent-amber { border-left: 2px solid var(--amber); }
+  .card.accent-amber .card-icon { background: var(--amber-dim); color: var(--amber); }
+  .card.accent-rose  { border-left: 2px solid var(--rose); }
+  .card.accent-rose  .card-icon { background: var(--rose-dim);  color: var(--rose); }
+  .card.accent-green { border-left: 2px solid var(--green); }
+  .card.accent-green .card-icon { background: var(--green-dim); color: var(--green); }
+  .card.accent-purple { border-left: 2px solid var(--purple); }
+  .card.accent-purple .card-icon { background: var(--purple-dim); color: var(--purple); }
+
+  /* Diagram */
+  .diagram-stack {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0; padding: 16px 0;
+  }
+  .diagram-row {
+    display: flex; align-items: center; gap: 0;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .node {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 22px;
+    text-align: center;
+    font-weight: 600; font-size: 13px;
+    min-width: 100px;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    white-space: nowrap;
+  }
+  .node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+  }
+  .node em {
+    display: block; font-style: normal; font-weight: 400;
+    font-size: 10px; color: var(--text-secondary); margin-top: 3px;
+  }
+  .node.teal  { border-color: var(--teal);  background: var(--teal-dim); }
+  .node.blue  { border-color: var(--blue);  background: var(--blue-dim); }
+  .node.amber { border-color: var(--amber); background: var(--amber-dim); }
+  .node.rose  { border-color: var(--rose);  background: var(--rose-dim); }
+  .node.green { border-color: var(--green); background: var(--green-dim); }
+
+  .flow-arrow {
+    display: flex; align-items: center;
+    margin: 0 2px; flex-shrink: 0;
+  }
+  .v-connector {
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .flow-label {
+    font-size: 10px; color: var(--text-secondary);
+    text-align: center; padding: 4px 0;
+    letter-spacing: 0.02em;
+  }
+  .flow-label .dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    margin-right: 5px; vertical-align: middle;
+  }
+
+  @keyframes dash { to { stroke-dashoffset: -24; } }
+  .arrow-line {
+    stroke: #3a3a52; stroke-width: 2px;
+    stroke-dasharray: 8 4;
+    animation: dash 1.2s linear infinite;
+  }
+  .arrow-head { fill: #3a3a52; }
+
+  /* Steps */
+  .steps {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px; margin-top: 28px;
+  }
+  .step {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 16px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    transition: border-color 0.25s;
+  }
+  .step:hover { border-color: var(--border-hover); }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--teal-dim); color: var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+    border: 1px solid rgba(20,184,166,0.2);
+  }
+  .step-body { font-size: 13px; }
+  .step-body strong { font-weight: 600; }
+  .step-body span { display: block; color: var(--text-secondary); font-size: 12px; margin-top: 2px; }
+
+  /* Screenshots */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 20px;
+  }
+  .shot {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.25s, transform 0.25s;
+    cursor: pointer;
+  }
+  .shot:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+  }
+  .shot img {
+    width: 100%; display: block;
+    border-bottom: 1px solid var(--border);
+  }
+  .shot .placeholder {
+    width: 100%; height: 220px; display: flex;
+    align-items: center; justify-content: center;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary); font-size: 13px;
+    font-style: italic;
+  }
+  .shot .caption {
+    padding: 12px 16px; font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .shot .caption .cap-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  /* Security */
+  .sec-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+  }
+  @media (max-width: 700px) { .sec-grid { grid-template-columns: 1fr; } }
+  .sec-col h4 { font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .sec-col ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .sec-col li {
+    font-size: 12px; display: flex; align-items: flex-start; gap: 8px;
+    color: var(--text-secondary); line-height: 1.6;
+  }
+  .sec-col li::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    margin-top: 6px; flex-shrink: 0;
+  }
+  .sec-col.done li::before { background: var(--green); }
+  .sec-col.todo li::before { background: var(--amber); }
+
+  footer {
+    text-align: center; padding: 28px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--text-secondary);
+  }
+  footer a { color: var(--teal); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Lightbox */
+  .lightbox-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px); cursor: pointer;
+  }
+  .lightbox-overlay.open { display: flex; }
+  .lightbox-overlay img {
+    max-width: 90vw; max-height: 90vh;
+    border-radius: var(--radius);
+    box-shadow: 0 16px 64px rgba(0,0,0,0.6);
+    cursor: default;
+  }
+  .lightbox-close {
+    position: absolute; top: 24px; right: 32px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    color: var(--text); font-size: 22px; line-height: 38px;
+    text-align: center; cursor: pointer;
+  }
+  .lightbox-close:hover { background: var(--border-hover); }
+
+  @media (max-width: 768px) {
+    section { padding: 32px 20px; }
+    .topbar { padding: 14px 20px; }
+    .diagram-row { gap: 8px; }
+    .node { padding: 10px 14px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="mark">K</div>
+  <h1>Kairo Architecture</h1>
+  <span class="sub">AI Calendar &bull; WhatsApp Bridge &bull; AWS EC2</span>
+</div>
+
+<!-- OVERVIEW -->
+<section>
+  <div class="section-label">overview</div>
+  <div class="section-title">How Kairo Works</div>
+  <p class="section-desc">
+    Kairo is an AI-powered smart calendar. Connect WhatsApp, select groups to monitor,
+    and Kairo automatically extracts events (exams, deadlines, meetings) from messages
+    and images using Groq LLMs. A built-in AI assistant answers questions about your schedule.
+  </p>
+
+  <div class="card-grid">
+    <div class="card accent-teal">
+      <div class="card-icon">&#127760;</div>
+      <h4>Frontend SPA</h4>
+      <p>React + Vite app deployed on Firebase Hosting with global CDN. Week/Day/Month views, drag-and-drop scheduling, AI chat sidebar, WhatsApp connection panel, and dark/light theme. Zustand for state, Supabase Realtime for live updates.</p>
+      <div class="chip-row">
+        <span class="chip">React 18</span><span class="chip">Vite 5</span><span class="chip">Zustand</span><span class="chip">DnD Kit</span><span class="chip">date-fns</span><span class="chip">Tailwind</span>
+      </div>
+    </div>
+
+    <div class="card accent-green">
+      <div class="card-icon">&#9881;</div>
+      <h4>Bridge Server (AWS EC2)</h4>
+      <p>Express API running in Docker on an EC2 instance. Manages multi-tenant WhatsApp Web sessions via whatsapp-web.js + headless Chromium. Proxies Groq AI calls, processes messages for event extraction, and syncs state to Supabase.</p>
+      <div class="chip-row">
+        <span class="chip">Express 4</span><span class="chip">whatsapp-web.js</span><span class="chip">Chromium</span><span class="chip">Docker Compose</span><span class="chip">EC2 t3.micro</span>
+      </div>
+    </div>
+
+    <div class="card accent-amber">
+      <div class="card-icon">&#128451;</div>
+      <h4>Supabase (Database + Auth)</h4>
+      <p>Managed PostgreSQL with Realtime subscriptions and Row Level Security. Stores users, calendar events, WhatsApp status, chat history, and bridge API keys. RLS ensures each user can only access their own data.</p>
+      <div class="chip-row">
+        <span class="chip">PostgreSQL</span><span class="chip">Realtime</span><span class="chip">Auth (JWT)</span><span class="chip">RLS</span><span class="chip">Google OAuth</span>
+      </div>
+    </div>
+
+    <div class="card accent-rose">
+      <div class="card-icon">&#129302;</div>
+      <h4>Groq AI (LLM Inference)</h4>
+      <p>Ultra-fast LLM inference for event extraction and chat. Llama 3.3 70B for text understanding, Llama 4 Scout for vision (timetable images, PDFs). API keys stay server-side, proxied through the bridge.</p>
+      <div class="chip-row">
+        <span class="chip">llama-3.3-70b</span><span class="chip">llama-4-scout</span><span class="chip">Vision OCR</span><span class="chip">JSON mode</span>
+      </div>
+    </div>
+
+    <div class="card accent-blue">
+      <div class="card-icon">&#128172;</div>
+      <h4>WhatsApp Integration</h4>
+      <p>Each user gets an isolated headless Chromium session authenticated via QR scan. Bridge monitors watched groups, intercepts messages, runs them through Groq for event extraction, and pushes structured events to Supabase in real-time.</p>
+      <div class="chip-row">
+        <span class="chip">Multi-tenant</span><span class="chip">QR auth</span><span class="chip">Group monitoring</span><span class="chip">Media download</span>
+      </div>
+    </div>
+
+    <div class="card accent-purple">
+      <div class="card-icon">&#128640;</div>
+      <h4>CI/CD &amp; Infrastructure</h4>
+      <p>GitHub Actions auto-deploys the bridge to EC2 on push. Frontend builds with Vite and deploys to Firebase Hosting. Docker Compose orchestrates the bridge container with health checks and auto-restart.</p>
+      <div class="chip-row">
+        <span class="chip">GitHub Actions</span><span class="chip">Docker Compose</span><span class="chip">Firebase CLI</span><span class="chip">SSH deploy</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section>
+  <div class="section-label">product</div>
+  <div class="section-title">Screenshots</div>
+  <p class="section-desc">Key screens from the Kairo application.</p>
+
+  <div class="shots">
+    <!-- SCREENSHOT 1: Main calendar dashboard -->
+    <div class="shot" data-src="screenshots/main-dashboard.png">
+      <img src="screenshots/main-dashboard.png" alt="Main calendar dashboard" loading="lazy" />
+      <div class="caption">
+        <span class="cap-dot" style="background:var(--teal);"></span>
+        Main Dashboard — Week view with sidebar, mini-calendar, and event blocks
+      </div>
+    </div>
+
+    <!-- SCREENSHOT 2: AI chat assistant -->
+    <div class="shot" data-src="screenshots/ai-chat.png">
+      <img src="screenshots/ai-chat.png" alt="AI chat assistant" loading="lazy" />
+      <div class="caption">
+        <span class="cap-dot" style="background:var(--rose);"></span>
+        AI Chat — Ask about your schedule, create events via natural language
+      </div>
+    </div>
+
+    <!-- SCREENSHOT 3: WhatsApp QR + settings -->
+    <div class="shot" data-src="screenshots/whatsapp-settings.png">
+      <img src="screenshots/whatsapp-settings.png" alt="WhatsApp connection panel" loading="lazy" />
+      <div class="caption">
+        <span class="cap-dot" style="background:var(--green);"></span>
+        WhatsApp Connect — QR scan, group selection, and monitoring status
+      </div>
+    </div>
+
+    <!--
+      ===================== SCREENSHOTS (6 of 8 filled) =====================
+      Remaining: dark-mode and extracted-events.
+    -->
+
+    <!-- SCREENSHOT 4: Event creation modal -->
+    <div class="shot" data-src="screenshots/event-modal.png">
+      <img src="screenshots/event-modal.png" alt="Event creation modal" loading="lazy" />
+      <div class="caption">
+        <span class="cap-dot" style="background:var(--amber);"></span>
+        Event Editor — Create/edit events with category, recurrence, and color
+      </div>
+    </div>
+
+    <!-- SCREENSHOT 5: Month view -->
+    <div class="shot" data-src="screenshots/month-view.png">
+      <img src="screenshots/month-view.png" alt="Month view" loading="lazy" />
+      <div class="caption">
+        <span class="cap-dot" style="background:var(--blue);"></span>
+        Month View — Overview of all events across the month
+      </div>
+    </div>
+
+    <!-- SCREENSHOT 6: TODO — Dark mode -->
+    <div class="shot">
+      <div class="placeholder">📸 Add: screenshots/dark-mode.png</div>
+      <div class="caption">
+        <span class="cap-dot" style="background:var(--purple);"></span>
+        Dark Mode — Full dark theme with glass morphism UI
+      </div>
+    </div>
+
+    <!-- SCREENSHOT 7: TODO — WhatsApp extracted events appearing on calendar -->
+    <div class="shot">
+      <div class="placeholder">📸 Add: screenshots/extracted-events.png</div>
+      <div class="caption">
+        <span class="cap-dot" style="background:var(--green);"></span>
+        Auto-Extracted Events — Events from WhatsApp messages on the calendar
+      </div>
+    </div>
+
+    <!-- SCREENSHOT 8: Mobile responsive view -->
+    <div class="shot" data-src="screenshots/mobile-view.png">
+      <img src="screenshots/mobile-view.png" alt="Mobile responsive view" loading="lazy" />
+      <div class="caption">
+        <span class="cap-dot" style="background:var(--teal);"></span>
+        Mobile View — Responsive layout on phone screens
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA FLOW -->
+<section>
+  <div class="section-label">data flow</div>
+  <div class="section-title">Request Architecture</div>
+  <p class="section-desc">
+    How data flows through Kairo — from user login to WhatsApp message processing and realtime calendar updates.
+  </p>
+
+  <div class="diagram-stack">
+    <!-- Row 1: User → Firebase → SPA -->
+    <div class="diagram-row">
+      <div class="node teal">&#128100; User Browser</div>
+      <div class="flow-arrow">
+        <svg width="80" height="24" viewBox="0 0 80 24">
+          <line x1="0" y1="12" x2="66" y2="12" class="arrow-line"/>
+          <polygon points="66,7 76,12 66,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node amber">Firebase CDN<em>kairocalender.web.app</em></div>
+      <div class="flow-arrow">
+        <svg width="80" height="24" viewBox="0 0 80 24">
+          <line x1="0" y1="12" x2="66" y2="12" class="arrow-line"/>
+          <polygon points="66,7 76,12 66,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node teal">React SPA<em>Vite + Zustand</em></div>
+    </div>
+
+    <div class="v-connector">
+      <svg width="24" height="40" viewBox="0 0 24 40">
+        <line x1="12" y1="0" x2="12" y2="26" class="arrow-line"/>
+        <polygon points="7,26 12,36 17,26" class="arrow-head"/>
+      </svg>
+    </div>
+    <div class="flow-label">
+      <span class="dot" style="background:var(--teal);"></span>
+      Auth: Supabase JWT → RPC get_or_create_bridge_api_key → httpOnly cookie
+    </div>
+
+    <!-- Row 2: SPA ↔ Bridge ↔ Supabase -->
+    <div class="diagram-row">
+      <div class="node teal">SPA Client<em>Authenticated</em></div>
+      <div class="flow-arrow">
+        <svg width="80" height="24" viewBox="0 0 80 24">
+          <line x1="0" y1="12" x2="66" y2="12" class="arrow-line"/>
+          <polygon points="66,7 76,12 66,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node green">Bridge Server<em>EC2 :3001</em></div>
+      <div class="flow-arrow">
+        <svg width="80" height="24" viewBox="0 0 80 24">
+          <line x1="0" y1="12" x2="66" y2="12" class="arrow-line"/>
+          <polygon points="66,7 76,12 66,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node amber">Supabase<em>PostgreSQL + Realtime</em></div>
+    </div>
+
+    <div class="v-connector">
+      <svg width="24" height="40" viewBox="0 0 24 40">
+        <line x1="12" y1="0" x2="12" y2="26" class="arrow-line"/>
+        <polygon points="7,26 12,36 17,26" class="arrow-head"/>
+      </svg>
+    </div>
+    <div class="flow-label">
+      <span class="dot" style="background:var(--rose);"></span>
+      Bridge proxies AI calls &amp; processes WhatsApp messages
+    </div>
+
+    <!-- Row 3: AI + WhatsApp pipeline -->
+    <div class="diagram-row">
+      <div class="node rose">Groq API<em>llama-3.3-70b</em></div>
+      <div class="flow-arrow">
+        <svg width="80" height="24" viewBox="0 0 80 24">
+          <line x1="0" y1="12" x2="66" y2="12" class="arrow-line"/>
+          <polygon points="66,7 76,12 66,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node green">Event Extractor<em>whatsappProcessor.js</em></div>
+      <div class="flow-arrow">
+        <svg width="80" height="24" viewBox="0 0 80 24">
+          <line x1="0" y1="12" x2="66" y2="12" class="arrow-line"/>
+          <polygon points="66,7 76,12 66,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node amber">whatsapp_events<em>Realtime → Calendar</em></div>
+    </div>
+
+    <div class="v-connector">
+      <svg width="24" height="32" viewBox="0 0 24 32">
+        <line x1="12" y1="0" x2="12" y2="18" class="arrow-line"/>
+        <polygon points="7,18 12,28 17,18" class="arrow-head"/>
+      </svg>
+    </div>
+
+    <!-- Row 4: WhatsApp source -->
+    <div class="diagram-row">
+      <div class="node blue">WhatsApp Web<em>Headless Chromium</em></div>
+      <div class="flow-arrow">
+        <svg width="80" height="24" viewBox="0 0 80 24">
+          <line x1="0" y1="12" x2="66" y2="12" class="arrow-line"/>
+          <polygon points="66,7 76,12 66,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node green">Session Manager<em>Per-user isolation</em></div>
+      <div class="flow-arrow">
+        <svg width="80" height="24" viewBox="0 0 80 24">
+          <line x1="0" y1="12" x2="66" y2="12" class="arrow-line"/>
+          <polygon points="66,7 76,12 66,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node green">Watched Groups<em>Keyword filter</em></div>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Login</strong>
+        <span>User authenticates via Supabase (email or Google OAuth). JWT session stored in browser.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Bridge Auth</strong>
+        <span>SPA calls Supabase RPC for API key, then POSTs to bridge for an httpOnly JWT cookie.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Connect WhatsApp</strong>
+        <span>User scans QR code. Bridge creates an isolated Chromium session. User selects groups to watch.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Message Interception</strong>
+        <span>Bridge listens to watched groups. Keyword filter identifies schedule-relevant messages.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <strong>AI Extraction</strong>
+        <span>Filtered messages → Groq LLM → structured JSON with title, date, time, category.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <strong>Database Write</strong>
+        <span>Bridge inserts event into whatsapp_events via user-scoped Supabase client (RLS enforced).</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <strong>Realtime Push</strong>
+        <span>Supabase Realtime pushes the new event to all connected browsers. Calendar updates instantly.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <strong>AI Chat</strong>
+        <span>User asks about their schedule → SPA → Bridge (Groq proxy) → AI response.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section>
+  <div class="section-label">security</div>
+  <div class="section-title">Security Model</div>
+
+  <div class="sec-grid">
+    <div class="sec-col done">
+      <h4><span style="color:var(--green);">&#10003;</span> Implemented</h4>
+      <ul>
+        <li>httpOnly JWT cookies for bridge auth — XSS-proof credentials</li>
+        <li>Row Level Security on all Supabase tables — queries scoped to auth.uid()</li>
+        <li>Service role key limited to 2 cross-user operations (boot cleanup, admin tasks)</li>
+        <li>User-scoped Supabase client with signed JWT for per-user writes</li>
+        <li>Bridge API key stored in Supabase (no file-based secrets)</li>
+        <li>Rate limiting: 120 req/min global, 30/min AI, 10/15min registration</li>
+        <li>Helmet security headers on bridge API</li>
+        <li>CORS whitelist with origin validation</li>
+      </ul>
+    </div>
+    <div class="sec-col todo">
+      <h4><span style="color:var(--amber);">&#9888;</span> Planned</h4>
+      <ul>
+        <li>TLS termination — Caddy/nginx reverse proxy with Let's Encrypt</li>
+        <li>Content Security Policy headers on Firebase Hosting</li>
+        <li>Restrict port 3001 behind reverse proxy (not 0.0.0.0)</li>
+        <li>Chrome sandbox inside Docker (currently --no-sandbox)</li>
+        <li>Brute-force protection on auth-cookie endpoint</li>
+        <li>Automated npm audit in CI pipeline</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- DEPLOYMENT -->
+<section>
+  <div class="section-label">deployment</div>
+  <div class="section-title">Infrastructure &amp; Deployment</div>
+  <p class="section-desc">Current production deployment topology.</p>
+
+  <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+    <div class="card accent-teal">
+      <h4>Frontend</h4>
+      <p><strong>Firebase Hosting</strong><br>Global CDN, auto-SSL<br><code>kairocalender.web.app</code></p>
+    </div>
+    <div class="card accent-green">
+      <h4>Bridge Server</h4>
+      <p><strong>AWS EC2 t3.micro</strong><br>Docker Compose, Ubuntu<br>Port 3001, GitHub Actions CD</p>
+    </div>
+    <div class="card accent-amber">
+      <h4>Database</h4>
+      <p><strong>Supabase Cloud</strong><br>PostgreSQL + Realtime<br>Managed, auto-backup</p>
+    </div>
+    <div class="card accent-rose">
+      <h4>AI Inference</h4>
+      <p><strong>Groq Cloud</strong><br>Llama 3.3 70B + Scout<br>~200ms latency, API-based</p>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section>
+  <div class="section-label">stack</div>
+  <div class="section-title">Technology Stack</div>
+
+  <div class="diagram-stack" style="padding:0;">
+    <div class="diagram-row" style="gap:12px; flex-wrap:wrap; justify-content:center;">
+      <div class="node teal" style="display:flex; flex-direction:column; gap:2px; align-items:center;">
+        <strong>Frontend</strong>
+        <em>React 18 &bull; Vite 5</em>
+        <em>Zustand &bull; DnD Kit</em>
+        <em>Tailwind &bull; date-fns</em>
+        <em>Firebase Hosting</em>
+      </div>
+      <div class="flow-arrow">
+        <svg width="50" height="24" viewBox="0 0 50 24">
+          <line x1="0" y1="12" x2="36" y2="12" class="arrow-line"/>
+          <polygon points="36,7 46,12 36,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node green" style="display:flex; flex-direction:column; gap:2px; align-items:center;">
+        <strong>Bridge</strong>
+        <em>Express 4 &bull; Node 20</em>
+        <em>whatsapp-web.js</em>
+        <em>Puppeteer &bull; Chromium</em>
+        <em>Docker &bull; AWS EC2</em>
+      </div>
+      <div class="flow-arrow">
+        <svg width="50" height="24" viewBox="0 0 50 24">
+          <line x1="0" y1="12" x2="36" y2="12" class="arrow-line"/>
+          <polygon points="36,7 46,12 36,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node amber" style="display:flex; flex-direction:column; gap:2px; align-items:center;">
+        <strong>Database</strong>
+        <em>Supabase PostgreSQL</em>
+        <em>Realtime (WebSocket)</em>
+        <em>RLS Policies</em>
+        <em>Auth + OAuth</em>
+      </div>
+      <div class="flow-arrow">
+        <svg width="50" height="24" viewBox="0 0 50 24">
+          <line x1="0" y1="12" x2="36" y2="12" class="arrow-line"/>
+          <polygon points="36,7 46,12 36,17" class="arrow-head"/>
+        </svg>
+      </div>
+      <div class="node rose" style="display:flex; flex-direction:column; gap:2px; align-items:center;">
+        <strong>AI</strong>
+        <em>Groq Cloud</em>
+        <em>llama-3.3-70b (text)</em>
+        <em>llama-4-scout (vision)</em>
+        <em>JSON-mode extraction</em>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIGHTBOX -->
+<div class="lightbox-overlay" id="lightbox">
+  <span class="lightbox-close" id="lightboxClose">&times;</span>
+  <img id="lightboxImg" src="" alt="Screenshot expanded" />
+</div>
+
+<footer>
+  Kairo Architecture &mdash; Updated June 2026 &mdash;
+  <a href="https://kairocalender.web.app" target="_blank">kairocalender.web.app</a>
+</footer>
+
+<script>
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  document.querySelectorAll('.shot').forEach(el => {
+    el.addEventListener('click', () => {
+      const img = el.querySelector('img');
+      if (!img) return;
+      lightboxImg.src = img.src;
+      lightbox.classList.add('open');
+    });
+  });
+  document.getElementById('lightboxClose').addEventListener('click', e => {
+    e.stopPropagation();
+    lightbox.classList.remove('open');
+  });
+  lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') lightbox.classList.remove('open');
+  });
+</script>
+</body>
+</html>
