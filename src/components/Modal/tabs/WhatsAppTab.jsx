@@ -43,6 +43,7 @@ export default function WhatsAppTab() {
     try {
       await connectWhatsApp()
     } catch (err) {
+      console.error('[WhatsAppTab] connect failed:', err.message)
       setError(err.message)
     } finally {
       setConnecting(false)
@@ -54,6 +55,7 @@ export default function WhatsAppTab() {
       await disconnectWhatsApp()
       setGroups([])
     } catch (err) {
+      console.error('[WhatsAppTab] disconnect failed:', err.message)
       setError(err.message)
     }
   }

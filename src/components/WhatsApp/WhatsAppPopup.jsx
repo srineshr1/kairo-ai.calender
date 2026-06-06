@@ -128,7 +128,7 @@ export default function WhatsAppPopup({ onClose }) {
       phase === 'DISCONNECTED'
     ) {
       hasAutoConnectedRef.current = true
-      connectWhatsApp().catch((err) => setError(err.message))
+      connectWhatsApp().catch((err) => { console.error('[WhatsApp] auto-connect failed:', err.message); setError(err.message) })
     }
   }, [isMobile, isConnected, phase])
 
@@ -157,19 +157,20 @@ export default function WhatsAppPopup({ onClose }) {
     try {
       await connectWhatsApp()
     } catch (err) {
+      console.error('[WhatsApp] connect failed:', err.message)
       setError(err.message)
     }
   }
 
   const handleDisconnect = async () => {
     setError(null)
-    try { await disconnectWhatsApp() } catch (err) { setError(err.message) }
+    try { await disconnectWhatsApp() } catch (err) { console.error('[WhatsApp] disconnect failed:', err.message); setError(err.message) }
   }
 
   const handleLogout = async () => {
     if (!confirm('Logout? You will need to scan the QR again to reconnect.')) return
     setError(null)
-    try { await logoutWhatsApp() } catch (err) { setError(err.message) }
+    try { await logoutWhatsApp() } catch (err) { console.error('[WhatsApp] logout failed:', err.message); setError(err.message) }
   }
 
   const handleAddItem = async (item) => {

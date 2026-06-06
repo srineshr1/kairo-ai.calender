@@ -26,6 +26,7 @@ export class WhatsAppBridgeError extends Error {
 export function setBridgeCredentials(userId, apiKey) {
   currentUserId = userId || null
   currentApiKey = apiKey || null
+  console.log('[WhatsApp] credentials set — userId:', userId, 'hasApiKey:', !!apiKey)
   if (userId && apiKey) {
     try {
       fetch(`${BRIDGE_URL}/users/${userId}/auth-cookie`, {
@@ -84,6 +85,7 @@ async function bridgeFetch(path, { method = 'GET', body } = {}) {
         const err = await res.json()
         msg = err.message || err.error || msg
       } catch {}
+      console.error('[WhatsApp] bridge responded with', res.status, '—', msg)
       throw new WhatsAppBridgeError(msg, res.status)
     }
     return res.json()
@@ -99,6 +101,7 @@ async function bridgeFetch(path, { method = 'GET', body } = {}) {
 export async function connectWhatsApp() {
   const userId = getCurrentUserId()
   if (!userId) throw new WhatsAppBridgeError('User ID not set', null)
+  console.log('[WhatsApp] connecting — userId:', userId, 'hasApiKey:', !!currentApiKey, 'bridgeUrl:', BRIDGE_URL)
   return bridgeFetch(`/users/${userId}/connect`, { method: 'POST' })
 }
 
