@@ -1,0 +1,28 @@
+name: Deploy Bridge to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'whatsapp-bridge/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd ~/kairo
+            git fetch origin main
+            git reset --hard origin/main
+            cd ~/kairo/whatsapp-bridge
+            docker compose up -d --build
+            docker compose logs --tail 5
