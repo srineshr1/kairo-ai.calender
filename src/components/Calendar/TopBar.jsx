@@ -146,21 +146,20 @@ export default function TopBar({
 
       <div className="flex gap-1" role="toolbar" aria-label="Calendar actions">
         {/* Drag & Drop toggle - only show in Day and Week views, hidden on mobile */}
-        {(activeView === 'Day' || activeView === 'Week') && (
-          <button
-            onClick={() => updateSetting('dragDropEnabled', !dragDropEnabled)}
-            className={`hidden sm:flex px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11.5px] font-medium transition-all duration-150 whitespace-nowrap ${
-              dragDropEnabled
-                ? 'text-white shadow-sm'
-                : 'theme-text-secondary hover:bg-black/5 theme-hover-text'
-            }`}
-            style={dragDropEnabled ? { backgroundColor: 'var(--color-accent)' } : {}}
-            aria-label={`Drag and drop is ${dragDropEnabled ? 'enabled' : 'disabled'}. Click to ${dragDropEnabled ? 'disable' : 'enable'}.`}
-            aria-pressed={dragDropEnabled}
-          >
-            Drag & Drop: {dragDropEnabled ? 'On' : 'Off'}
-          </button>
-        )}
+        <button
+          onClick={() => updateSetting('dragDropEnabled', !dragDropEnabled)}
+          className={`hidden sm:flex px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11.5px] font-medium transition-all duration-150 whitespace-nowrap ${
+            dragDropEnabled
+              ? 'text-white shadow-sm'
+              : 'theme-text-secondary hover:bg-black/5 theme-hover-text'
+          } ${activeView === 'Month' ? 'invisible pointer-events-none' : ''}`}
+          style={dragDropEnabled ? { backgroundColor: 'var(--color-accent)' } : {}}
+          aria-label={`Drag and drop is ${dragDropEnabled ? 'enabled' : 'disabled'}. Click to ${dragDropEnabled ? 'disable' : 'enable'}.`}
+          aria-pressed={dragDropEnabled}
+          tabIndex={activeView === 'Month' ? -1 : 0}
+        >
+          Drag & Drop: {dragDropEnabled ? 'On' : 'Off'}
+        </button>
         {/* WhatsApp - hidden on mobile (show "use desktop" message in popup instead) */}
         <div className="relative hidden sm:block">
           <button
