@@ -7,6 +7,7 @@
  */
 
 import * as pdfjsLib from 'pdfjs-dist'
+import { getCurrentUserId } from './whatsappClient'
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
@@ -26,16 +27,6 @@ const VISION_MODEL = import.meta.env.VITE_GROQ_VISION_MODEL || 'meta-llama/llama
 
 // Status codes that are safe to retry
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504]
-
-// Get current user ID from session storage
-function getCurrentUserId() {
-  return sessionStorage.getItem('bridge_user_id')
-}
-
-// Get current bridge API key from session storage
-function getCurrentBridgeApiKey() {
-  return sessionStorage.getItem('bridge_api_key')
-}
 
 /**
  * Custom error class for Groq API errors
@@ -233,7 +224,6 @@ export async function generateText({
 
   // Determine if we should use bridge proxy
   const bridgeUserId = getCurrentUserId()
-  const bridgeApiKey = getCurrentBridgeApiKey()
   const useProxy = USE_BRIDGE_PROXY && BRIDGE_URL && bridgeUserId
   
   // Production hard-guard
@@ -254,14 +244,6 @@ export async function generateText({
     )
   }
 
-  if (useProxy && !bridgeApiKey) {
-    throw new GroqError(
-      'Bridge credentials missing. Please refresh the page or sign out and sign back in.',
-      401,
-      null
-    )
-  }
-
   if (!processedMessages || processedMessages.length === 0) {
     throw new GroqError('Messages array is required and must not be empty', null, null)
   }
@@ -278,7 +260,6 @@ export async function generateText({
         ? {
             'Content-Type': 'application/json',
             'X-User-ID': bridgeUserId,
-            'X-API-Key': bridgeApiKey,
           }
         : { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' }
       
@@ -286,7 +267,11 @@ export async function generateText({
         ? JSON.stringify({ model: effectiveModel, messages: processedMessages, temperature, maxTokens })
         : JSON.stringify({ model: effectiveModel, messages: processedMessages, temperature, max_tokens: maxTokens })
       
-      const res = await fetchWithTimeout(url, { method: 'POST', headers, body }, timeout)
+      const fetchOptions = { method: 'POST', headers, body }
+      if (useProxy) {
+        fetchOptions.credentials = 'include'
+      }
+      const res = await fetchWithTimeout(url, fetchOptions, timeout)
 
       if (!res.ok) {
         let errorData

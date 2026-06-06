@@ -1,5 +1,8 @@
 const crypto = require('crypto')
+const jwt = require('jsonwebtoken')
 const { getSupabase } = require('../supabaseClient')
+
+const COOKIE_SECRET = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 32) || require('crypto').randomBytes(32).toString('hex')
 
 const CACHE_TTL_MS = 5 * 60 * 1000
 const cache = new Map()
@@ -56,13 +59,25 @@ async function validateCredentials(userId, apiKey) {
 }
 
 async function bridgeAuthMiddleware(req, res, next) {
-  const userId = req.headers['x-user-id']
-  const apiKey = req.headers['x-api-key']
-
   if (isDevAuthBypassEnabled()) {
+    const userId = req.headers['x-user-id']
     req.userId = userId || 'dev-user'
     return next()
   }
+
+  try {
+    const token = req.cookies?.bridge_creds
+    if (token) {
+      const decoded = jwt.verify(token, COOKIE_SECRET)
+      req.userId = decoded.userId
+      return next()
+    }
+  } catch (err) {
+    // Cookie invalid, fall through to header auth
+  }
+
+  const userId = req.headers['x-user-id']
+  const apiKey = req.headers['x-api-key']
 
   if (!userId || !apiKey) {
     return res.status(401).json({ error: 'Authentication required', message: 'Missing X-User-ID or X-API-Key header' })
@@ -98,4 +113,5 @@ module.exports = {
   validateUserParam,
   isValidUserId,
   invalidateCache,
+  validateCredentials,
 }

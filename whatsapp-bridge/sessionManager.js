@@ -2,7 +2,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js')
 const fs = require('fs')
 const path = require('path')
 
-const { getSupabase } = require('./supabaseClient')
+const { getAdminSupabase, getUserSupabase } = require('./supabaseClient')
 
 const SESSIONS_DIR = path.join(__dirname, 'sessions')
 if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR, { recursive: true })
@@ -24,7 +24,7 @@ function userAuthDir(userId) {
 
 async function writeStatus(userId, fields) {
   try {
-    const supabase = getSupabase()
+    const supabase = getUserSupabase(userId)
     const row = {
       user_id: userId,
       status: fields.status,
@@ -42,7 +42,7 @@ async function writeStatus(userId, fields) {
 
 async function writeChats(userId, chats) {
   try {
-    const supabase = getSupabase()
+    const supabase = getUserSupabase(userId)
     await supabase.from('whatsapp_chats').delete().eq('user_id', userId)
     if (chats.length === 0) return
     const rows = chats.map((c) => ({
@@ -63,7 +63,7 @@ async function writeChats(userId, chats) {
 
 async function getWatchedChatIds(userId) {
   try {
-    const supabase = getSupabase()
+    const supabase = getUserSupabase(userId)
     const { data, error } = await supabase
       .from('whatsapp_watched_groups')
       .select('chat_id')
@@ -96,9 +96,18 @@ function buildClient(userId) {
         '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
-        '--no-zygote',
-        '--single-process',
         '--disable-gpu',
+        '--disable-background-networking',
+        '--disable-sync',
+        '--disable-default-apps',
+        '--hide-scrollbars',
+        '--metrics-recording-only',
+        '--mute-audio',
+        '--no-default-browser-check',
+        '--disable-extensions',
+        '--disable-translate',
+        '--disable-features=TranslateUI,BlinkGenPropertyTrees',
+        '--enable-features=NetworkService,NetworkServiceInProcess',
       ],
     },
   })
@@ -267,7 +276,7 @@ function getActiveSessions() {
 
 async function resetStaleStatus() {
   try {
-    const supabase = getSupabase()
+    const supabase = getAdminSupabase()
     const { error } = await supabase
       .from('whatsapp_status')
       .update({

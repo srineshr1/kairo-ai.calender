@@ -27,22 +27,21 @@ export function setBridgeCredentials(userId, apiKey) {
   currentUserId = userId || null
   currentApiKey = apiKey || null
   if (userId && apiKey) {
-    sessionStorage.setItem('bridge_user_id', userId)
-    sessionStorage.setItem('bridge_api_key', apiKey)
-  } else {
-    sessionStorage.removeItem('bridge_user_id')
-    sessionStorage.removeItem('bridge_api_key')
+    try {
+      fetch(`${BRIDGE_URL}/users/${userId}/auth-cookie`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-User-ID': userId, 'X-API-Key': apiKey },
+        body: JSON.stringify({ apiKey }),
+        credentials: 'include',
+      })
+    } catch (e) {
+      console.error('Failed to set auth cookie:', e.message)
+    }
   }
 }
 
-export function loadBridgeCredentials() {
-  currentUserId = sessionStorage.getItem('bridge_user_id')
-  currentApiKey = sessionStorage.getItem('bridge_api_key')
-  return { userId: currentUserId, apiKey: currentApiKey }
-}
-
 export function getCurrentUserId() {
-  return currentUserId || sessionStorage.getItem('bridge_user_id')
+  return currentUserId
 }
 
 export function getBridgeUrl() {
@@ -50,19 +49,15 @@ export function getBridgeUrl() {
 }
 
 export function hasCredentials() {
-  if (currentUserId && currentApiKey) return true
-  loadBridgeCredentials()
   return !!(currentUserId && currentApiKey)
 }
 
 function authHeaders() {
-  if (!currentUserId || !currentApiKey) loadBridgeCredentials()
-  if (!currentUserId || !currentApiKey) {
+  if (!currentUserId) {
     throw new WhatsAppBridgeError('Bridge credentials not set', null)
   }
   return {
     'X-User-ID': currentUserId,
-    'X-API-Key': currentApiKey,
     'Content-Type': 'application/json',
   }
 }
@@ -77,6 +72,7 @@ async function bridgeFetch(path, { method = 'GET', body } = {}) {
       headers: authHeaders(),
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
+      credentials: 'include',
     })
     if (!res.ok) {
       let msg = `HTTP ${res.status}`

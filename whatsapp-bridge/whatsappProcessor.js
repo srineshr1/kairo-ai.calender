@@ -1,6 +1,6 @@
 const axios = require('axios')
 const { extractEvents } = require('./extractor')
-const { getSupabase } = require('./supabaseClient')
+const { getUserSupabase } = require('./supabaseClient')
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const GROQ_API_KEY = process.env.GROQ_API_KEY
@@ -136,7 +136,7 @@ async function analyzePdf(media, groupName, caption = '') {
 
 async function pushEvents(userId, sourceMsgId, events) {
   if (!events.length) return
-  const supabase = getSupabase()
+  const supabase = getUserSupabase(userId)
   const rows = events.map((e) => ({
     user_id: userId,
     title: String(e.title).slice(0, 200),

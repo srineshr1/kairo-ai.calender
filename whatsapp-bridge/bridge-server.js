@@ -1,5 +1,6 @@
 const http = require('http')
 const express = require('express')
+const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const helmet = require('helmet')
 const rateLimit = require('express-rate-limit')
@@ -7,11 +8,12 @@ const { ipKeyGenerator } = require('express-rate-limit')
 const axios = require('axios')
 require('dotenv').config()
 
-const { bridgeAuthMiddleware, validateUserParam } = require('./middleware/bridgeAuth')
+const { bridgeAuthMiddleware, validateUserParam, validateCredentials } = require('./middleware/bridgeAuth')
 const sessionManager = require('./sessionManager')
 const { processIncomingMessage } = require('./whatsappProcessor')
 
 const PORT = process.env.PORT || process.env.BRIDGE_PORT || 3001
+const COOKIE_SECRET = process.env.COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 32) || require('crypto').randomBytes(32).toString('hex')
 
 sessionManager.setMessageHandler((userId, message) => {
   processIncomingMessage(userId, message).catch((err) => {
@@ -51,6 +53,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-User-ID', 'X-API-Key'],
 }
 
+app.use(cookieParser())
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
 app.use(cors(corsOptions))
 app.use(express.json({ limit: '1mb' }))
@@ -77,6 +80,27 @@ app.get('/health', (req, res) => {
     activeSessions: sessionManager.getActiveSessions().length,
     timestamp: new Date().toISOString(),
   })
+})
+
+app.post('/users/:userId/auth-cookie', validateUserParam, async (req, res) => {
+  const { apiKey } = req.body
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.length < 16) {
+    return res.status(400).json({ error: 'Invalid API key' })
+  }
+  const { userId } = req.params
+  const valid = await validateCredentials(userId, apiKey)
+  if (!valid) return res.status(403).json({ error: 'Invalid credentials' })
+
+  const jwt = require('jsonwebtoken')
+  const token = jwt.sign({ userId, apiKey }, COOKIE_SECRET, { expiresIn: '7d' })
+  res.cookie('bridge_creds', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/',
+  })
+  res.json({ success: true })
 })
 
 // ---------------------------------------------------------------------------
