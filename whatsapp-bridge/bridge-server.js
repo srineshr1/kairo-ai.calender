@@ -8,7 +8,7 @@ const { ipKeyGenerator } = require('express-rate-limit')
 const axios = require('axios')
 require('dotenv').config()
 
-const { bridgeAuthMiddleware, validateUserParam, validateCredentials } = require('./middleware/bridgeAuth')
+const { bridgeAuthMiddleware, validateUserParam, validateCredentials, isValidUserId } = require('./middleware/bridgeAuth')
 const sessionManager = require('./sessionManager')
 const { processIncomingMessage } = require('./whatsappProcessor')
 
@@ -82,7 +82,11 @@ app.get('/health', (req, res) => {
   })
 })
 
-app.post('/users/:userId/auth-cookie', validateUserParam, async (req, res) => {
+app.post('/users/:userId/auth-cookie', (req, res, next) => {
+  const { userId } = req.params
+  if (!isValidUserId(userId)) return res.status(400).json({ error: 'Invalid user ID' })
+  next()
+}, async (req, res) => {
   const { apiKey } = req.body
   if (!apiKey || typeof apiKey !== 'string' || apiKey.length < 16) {
     return res.status(400).json({ error: 'Invalid API key' })
