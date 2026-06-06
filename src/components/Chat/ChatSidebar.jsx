@@ -219,7 +219,7 @@ export default function ChatSidebar({ onClose, initialMessage }) {
 
   const containerStyle = isMobile
     ? { height: '100%', width: '100%' }
-    : { height: '560px', width: '380px', maxHeight: '80vh', maxWidth: '90vw' }
+    : { height: '560px', width: '380px', maxHeight: '80vh', maxWidth: '90vw', borderColor: 'color-mix(in srgb, var(--theme-border) 50%, transparent)' }
 
   const showSuggestions = messages.length === 0 && !isInWizard
 

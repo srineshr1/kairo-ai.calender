@@ -109,3 +109,4 @@ whatsapp-bridge/.railwayignore
 # Debug files
 *.mjs
 *.cjs
+.aider*

@@ -1,0 +1,32 @@
+- generic [ref=e53]:
+  - generic [ref=e54]:
+    - heading "Create your account" [level=2] [ref=e55]
+    - paragraph [ref=e56]:
+      - text: Or
+      - link "sign in to your account" [ref=e57] [cursor=pointer]:
+        - /url: /login
+  - generic [ref=e58]:
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]: Full name (optional)
+        - textbox "Full name (optional)" [ref=e62]:
+          - /placeholder: John Doe
+      - generic [ref=e63]:
+        - generic [ref=e64]: Email address
+        - textbox "Email address" [ref=e65]:
+          - /placeholder: you@example.com
+      - generic [ref=e66]:
+        - generic [ref=e67]: Password
+        - textbox "Password" [ref=e68]:
+          - /placeholder: ••••••••
+        - paragraph [ref=e69]: Must be at least 6 characters
+      - generic [ref=e70]:
+        - generic [ref=e71]: Confirm password
+        - textbox "Confirm password" [ref=e72]:
+          - /placeholder: ••••••••
+    - generic [ref=e73]:
+      - button "Create account" [ref=e74] [cursor=pointer]
+      - generic [ref=e79]: Or continue with
+      - button "Sign up with Google" [ref=e80] [cursor=pointer]:
+        - img [ref=e81]
+        - text: Sign up with Google

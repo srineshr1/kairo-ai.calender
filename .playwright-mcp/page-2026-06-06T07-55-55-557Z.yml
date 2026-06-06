@@ -1,0 +1,434 @@
+- generic [ref=e1]:
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11] [cursor=pointer]: File
+      - generic [ref=e12] [cursor=pointer]: Edit
+      - generic [ref=e13] [cursor=pointer]: View
+      - generic [ref=e14] [cursor=pointer]: Arrange
+      - generic [ref=e15] [cursor=pointer]: Extras
+      - generic [ref=e16] [cursor=pointer]: Help
+      - generic "Unsaved changes. Click here to save." [ref=e382] [cursor=pointer]
+      - button "Share" [ref=e19]:
+        - generic [ref=e20] [cursor=pointer]: Share
+    - generic [ref=e22]: Untitled Diagram
+  - generic "Click or drag and drop shapes. Shift+click to change selection. Alt+click to insert and connect." [ref=e23]:
+    - generic [ref=e24]:
+      - generic [ref=e27]:
+        - textbox "Type / to search" [ref=e28]
+        - img "Search" [ref=e29] [cursor=pointer]
+      - generic "Drag to reorder" [ref=e30] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e31]
+        - generic [ref=e32]: Scratchpad
+        - generic [ref=e33]:
+          - img "Help (https://www.drawio.com/doc/faq/scratchpad)" [ref=e34]
+          - img "Add" [ref=e35]
+          - img "Edit" [ref=e36]
+          - img "Close" [ref=e37]
+      - generic "Drag elements here" [ref=e40]
+      - generic "Drag to reorder" [ref=e41] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e42]
+        - generic [ref=e43]: General
+      - generic [ref=e45]:
+        - generic [ref=e46] [cursor=pointer]:
+          - img
+        - generic [ref=e47] [cursor=pointer]:
+          - img
+        - generic [ref=e48] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Text
+        - generic [ref=e49] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - heading "Heading" [level=1]
+                            - paragraph: Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        - generic [ref=e50] [cursor=pointer]:
+          - img
+        - generic [ref=e51] [cursor=pointer]:
+          - img
+        - generic [ref=e52] [cursor=pointer]:
+          - img
+        - generic [ref=e53] [cursor=pointer]:
+          - img
+        - generic [ref=e54] [cursor=pointer]:
+          - img
+        - generic [ref=e55] [cursor=pointer]:
+          - img
+        - generic [ref=e56] [cursor=pointer]:
+          - img
+        - generic [ref=e57] [cursor=pointer]:
+          - img
+        - generic [ref=e58] [cursor=pointer]:
+          - img
+        - generic [ref=e59] [cursor=pointer]:
+          - img
+        - generic [ref=e60] [cursor=pointer]:
+          - img
+        - generic [ref=e61] [cursor=pointer]:
+          - img
+        - generic [ref=e62] [cursor=pointer]:
+          - img
+        - generic [ref=e63] [cursor=pointer]:
+          - img
+        - generic [ref=e64] [cursor=pointer]:
+          - img
+        - generic [ref=e65] [cursor=pointer]:
+          - img
+        - generic [ref=e66] [cursor=pointer]:
+          - img
+        - generic [ref=e67] [cursor=pointer]:
+          - img
+        - generic [ref=e68] [cursor=pointer]:
+          - img
+        - generic [ref=e69] [cursor=pointer]:
+          - img
+        - generic [ref=e70] [cursor=pointer]:
+          - img
+        - generic [ref=e71] [cursor=pointer]:
+          - img
+        - generic [ref=e72] [cursor=pointer]:
+          - img
+        - generic [ref=e73] [cursor=pointer]:
+          - img
+        - generic [ref=e74] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Vertical Container
+        - generic [ref=e75] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Horizontal Container
+        - generic [ref=e76] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: List
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Item 1
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Item 2
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Item 3
+        - generic [ref=e77] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: List Item
+        - generic [ref=e78] [cursor=pointer]:
+          - img
+        - generic [ref=e79] [cursor=pointer]:
+          - img
+        - generic [ref=e80] [cursor=pointer]:
+          - img
+        - generic [ref=e81] [cursor=pointer]:
+          - img
+        - generic [ref=e82] [cursor=pointer]:
+          - img
+        - generic [ref=e83] [cursor=pointer]:
+          - img
+        - generic [ref=e84] [cursor=pointer]:
+          - img
+        - generic [ref=e85] [cursor=pointer]:
+          - img
+        - generic [ref=e86] [cursor=pointer]:
+          - img
+        - generic [ref=e87] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Label
+        - generic [ref=e88] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Label
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Source
+        - generic [ref=e89] [cursor=pointer]:
+          - img:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Label
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Source
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: Target
+        - generic [ref=e90] [cursor=pointer]:
+          - img
+      - generic "Drag to reorder" [ref=e91] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e92]
+        - generic [ref=e93]: Misc
+      - generic "Drag to reorder" [ref=e94] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e95]
+        - generic [ref=e96]: Advanced
+      - generic "Drag to reorder" [ref=e97] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e98]
+        - generic [ref=e99]: Basic
+      - generic "Drag to reorder" [ref=e100] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e101]
+        - generic [ref=e102]: Arrows
+      - generic "Drag to reorder" [ref=e103] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e104]
+        - generic [ref=e105]: Flowchart
+      - generic "Drag to reorder" [ref=e106] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e107]
+        - generic [ref=e108]: Entity Relation
+      - generic "Drag to reorder" [ref=e109] [cursor=pointer]:
+        - generic "Collapse/Expand" [ref=e110]
+        - generic [ref=e111]: UML
+    - button "+ More Shapes" [ref=e113]:
+      - generic [ref=e114]: +
+      - text: More Shapes
+  - generic [ref=e115]:
+    - generic [ref=e383]:
+      - generic "Style" [ref=e384] [cursor=pointer]:
+        - generic [ref=e385]: Style
+      - generic "Text" [ref=e386] [cursor=pointer]:
+        - generic [ref=e387]: Text
+      - generic "Arrange" [ref=e388] [cursor=pointer]:
+        - generic [ref=e389]: Arrange
+    - generic [ref=e390]:
+      - generic [ref=e392]:
+        - button [ref=e393]
+        - button [ref=e394]
+        - button [ref=e395]
+        - button [ref=e396]
+        - button [ref=e397]
+        - button [ref=e398]
+        - button [ref=e399]
+        - button [ref=e400]
+      - generic [ref=e410]:
+        - generic "Line" [ref=e411] [cursor=pointer]
+        - generic [ref=e413]:
+          - generic [ref=e414]:
+            - checkbox "Line" [checked] [ref=e415]
+            - generic "Line" [ref=e416]
+            - button "#666666" [ref=e417]:
+              - img [ref=e419] [cursor=pointer]
+            - option "Sharp" [selected]
+            - option "Rounded"
+            - option "Curved"
+          - textbox "Linewidth" [ref=e424]: 1 pt
+      - generic "Opacity" [ref=e428]:
+        - text: Opacity
+        - textbox "Opacity" [ref=e429]: 100 %
+      - generic "Effects" [ref=e434] [cursor=pointer]
+      - table [ref=e436]:
+        - row "Property Value" [ref=e437] [cursor=pointer]:
+          - columnheader "Property" [ref=e438]
+          - columnheader "Value" [ref=e439]
+  - generic "Space+Drag to pan" [ref=e241]:
+    - img [ref=e166]:
+      - generic [ref=e441]:
+        - generic [ref=e446]: Frontend Environment (Firebase)
+        - generic [ref=e453]:
+          - text: React Frontend
+          - text: Firebase Hosting
+        - generic [ref=e458]: Compute Environment (AWS EC2)
+        - generic [ref=e465]:
+          - text: Express Bridge
+          - text: Docker Container
+        - generic [ref=e470]:
+          - text: Puppeteer
+          - text: WhatsApp Web
+        - generic [ref=e475]: Supabase Platform
+        - generic [ref=e483]:
+          - text: PostgreSQL
+          - text: Row Level Security
+          - text: (RLS)
+        - generic [ref=e488]: External Services
+        - generic [ref=e495]:
+          - text: Groq LLM
+          - text: AI Inference API
+        - generic [ref=e500]:
+          - text: WhatsApp
+          - text: Network
+        - generic [ref=e506]: Direct Queries (RLS)
+        - generic [ref=e511]: API Key Auth
+        - generic [ref=e517]: Service Role
+        - generic [ref=e522]: Manages
+        - generic [ref=e527]: Proxies AI
+        - generic [ref=e532]: Puppeteer Session
+    - textbox [active]
+  - generic [ref=e167]:
+    - generic "Insert Page" [ref=e168]
+    - generic "Pages" [ref=e170]
+    - generic "Page-1 (ZrBPJlsHqp9IhT0uSXUp) [1]" [ref=e173]:
+      - generic [ref=e174]: Page-1
+    - link "jgraph/drawio" [ref=e176] [cursor=pointer]:
+      - /url: https://github.com/jgraph/drawio
+      - img "jgraph/drawio" [ref=e177]
+  - generic [ref=e178]:
+    - generic [ref=e179]:
+      - generic "View (Space+Drag to pan)" [ref=e180] [cursor=pointer]
+      - textbox "Zoom (Alt+Mousewheel)" [ref=e182]: 100%
+      - generic "Zoom In (Ctrl + / Alt+Mousewheel)" [ref=e184] [cursor=pointer]
+      - generic "Zoom Out (Ctrl - / Alt+Mousewheel)" [ref=e185] [cursor=pointer]
+      - generic "Undo (Ctrl+Z)" [ref=e187] [cursor=pointer]
+      - generic "Redo (Ctrl+Y)" [ref=e188]
+      - generic "Delete (Delete)" [ref=e190] [cursor=pointer]
+      - generic "To Front (Ctrl+Shift+F)" [ref=e192] [cursor=pointer]
+      - generic "To Back (Ctrl+Shift+B)" [ref=e193] [cursor=pointer]
+      - generic "Fill Color..." [ref=e195] [cursor=pointer]
+      - generic "Line Color..." [ref=e196] [cursor=pointer]
+      - generic "Shadow" [ref=e197] [cursor=pointer]
+      - generic "Connection" [ref=e199] [cursor=pointer]
+      - generic "Waypoints" [ref=e200] [cursor=pointer]
+      - generic "Insert (Doubleclick to insert text)" [ref=e202] [cursor=pointer]
+      - generic "Shapes" [ref=e203] [cursor=pointer]
+      - generic "Table" [ref=e204] [cursor=pointer]
+      - generic "Freehand (X)" [ref=e206] [cursor=pointer]
+      - generic "Generate" [ref=e207] [cursor=pointer]
+    - generic [ref=e208]:
+      - generic "Fullscreen" [ref=e209] [cursor=pointer]
+      - generic "Format (Ctrl+Shift+P)" [ref=e210] [cursor=pointer]
+      - generic "Collapse/Expand" [ref=e211] [cursor=pointer]
+  - generic [ref=e213]:
+    - table [ref=e214]:
+      - rowgroup [ref=e215]:
+        - row "Generate Help (https://www.drawio.com/doc/faq/configure-ai-options) MinimizeClose" [ref=e216]:
+          - cell "Generate Help (https://www.drawio.com/doc/faq/configure-ai-options) MinimizeClose" [ref=e217]:
+            - text: Generate
+            - generic [ref=e218]:
+              - img "Help (https://www.drawio.com/doc/faq/configure-ai-options)" [ref=e219]
+              - img "Minimize" [ref=e220] [cursor=pointer]
+              - img "Close" [ref=e221] [cursor=pointer]
+        - 'row "Architecture diagram of Kairo: React frontend on Firebase Hosting talks to Supabase PostgreSQL directly (RLS) and to Express bridge server (Docker on EC2) via API key auth. Bridge manages WhatsApp Web via Puppeteer and proxies AI to Groq LLM. Bridge also uses Supabase service role for server access. Remove Copy Edit Refresh Copy Open in New Window Preview Insert Send Create Diagram (draw.io)" [ref=e254]':
+          - 'cell "Architecture diagram of Kairo: React frontend on Firebase Hosting talks to Supabase PostgreSQL directly (RLS) and to Express bridge server (Docker on EC2) via API key auth. Bridge manages WhatsApp Web via Puppeteer and proxies AI to Groq LLM. Bridge also uses Supabase service role for server access. Remove Copy Edit Refresh Copy Open in New Window Preview Insert Send Create Diagram (draw.io)" [ref=e255]':
+            - generic [ref=e225]:
+              - generic [ref=e226]:
+                - generic [ref=e246]: "Architecture diagram of Kairo: React frontend on Firebase Hosting talks to Supabase PostgreSQL directly (RLS) and to Express bridge server (Docker on EC2) via API key auth. Bridge manages WhatsApp Web via Puppeteer and proxies AI to Groq LLM. Bridge also uses Supabase service role for server access."
+                - generic [ref=e247]:
+                  - img "Remove" [ref=e248] [cursor=pointer]
+                  - img "Copy" [ref=e249] [cursor=pointer]
+                  - img "Edit" [ref=e250] [cursor=pointer]
+                - generic [ref=e251]:
+                  - img [ref=e257]:
+                    - generic [ref=e260]:
+                      - generic [ref=e261]:
+                        - generic [ref=e267]: Frontend Environment (Firebase)
+                        - generic [ref=e274]:
+                          - text: React Frontend
+                          - text: Firebase Hosting
+                      - generic [ref=e275]:
+                        - generic [ref=e281]: Compute Environment (AWS EC2)
+                        - generic [ref=e288]:
+                          - text: Express Bridge
+                          - text: Docker Container
+                        - generic [ref=e295]:
+                          - text: Puppeteer
+                          - text: WhatsApp Web
+                      - generic [ref=e296]:
+                        - generic [ref=e302]: Supabase Platform
+                        - generic [ref=e310]:
+                          - text: PostgreSQL
+                          - text: Row Level Security
+                          - text: (RLS)
+                      - generic [ref=e311]:
+                        - generic [ref=e317]: External Services
+                        - generic [ref=e324]:
+                          - text: Groq LLM
+                          - text: AI Inference API
+                        - generic [ref=e331]:
+                          - text: WhatsApp
+                          - text: Network
+                      - generic [ref=e339]: Direct Queries (RLS)
+                      - generic [ref=e346]: API Key Auth
+                      - generic [ref=e354]: Service Role
+                      - generic [ref=e361]: Manages
+                      - generic [ref=e368]: Proxies AI
+                      - generic [ref=e375]: Puppeteer Session
+                  - generic [ref=e376]:
+                    - img "Refresh" [ref=e377] [cursor=pointer]
+                    - img "Copy" [ref=e378] [cursor=pointer]
+                    - img "Open in New Window" [ref=e379] [cursor=pointer]
+                    - img "Preview" [ref=e380] [cursor=pointer]
+                    - img "Insert" [ref=e381] [cursor=pointer]
+              - generic [ref=e227]:
+                - generic [ref=e228]:
+                  - textbox "Describe your diagram" [ref=e229]
+                  - img "Send" [ref=e230] [cursor=pointer]
+                - combobox [ref=e232]:
+                  - option "Create Diagram (draw.io)" [selected]
+                  - option "──────" [disabled]
+                  - option "Copy Diagram to Clipboard"
+                  - option "Copy Selection to Clipboard"
+                  - option "Update diagram from clipboard" [disabled]
+                  - option "Insert Diagram from Clipboard" [disabled]
+                  - option "──────" [disabled]
+                  - option "Reset"
+    - img [ref=e233]

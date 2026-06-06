@@ -1,4 +1,4 @@
-# WhatsApp Bridge Dockerfile for Railway
+# WhatsApp Bridge Dockerfile
 FROM node:20-alpine
 
 # Install Chromium for whatsapp-web.js

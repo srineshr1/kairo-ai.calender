@@ -1,0 +1,10 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic:
+      - generic:
+        - img
+        - generic:
+          - generic: Loading eraser.io
+  - alert [ref=e3]
+  - iframe [ref=e4]:
+    

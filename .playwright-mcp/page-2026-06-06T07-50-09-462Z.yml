@@ -1,0 +1,117 @@
+- generic [ref=e1]:
+  - generic [ref=e6]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e11]
+        - generic [ref=e15]: Untitled File
+      - generic [ref=e18]:
+        - button "Document" [ref=e20] [cursor=pointer]
+        - button "Both" [ref=e22] [cursor=pointer]
+        - button "Canvas" [ref=e24] [cursor=pointer]
+      - generic [ref=e26]:
+        - button "Ctrl K" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e29]: Ctrl
+            - generic [ref=e30]: K
+        - button "Sign in" [ref=e31] [cursor=pointer]
+        - button "AI Chat" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+          - text: AI Chat
+    - generic [ref=e36]:
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e41]:
+            - generic [ref=e43]: Untitled File
+            - textbox [active] [ref=e44]:
+              - generic [ref=e45]:
+                - 'heading "Kairo Architecture```diagram[Kairo Architecture]box \"Browser\" as browserbox \"Firebase Hosting\" as hostingbox \"React SPA\" as frontendbox \"Bridge Server (Express)\" as bridgebox \"WhatsApp Web (Puppeteer)\" as whatsappbox \"Supabase (PostgreSQL)\" as dbbox \"Groq AI (LLama)\" as groqbrowser -> hosting: \"HTTPS\"hosting -> frontend: \"React App\"frontend -> db: \"Supabase Client (RLS)\"frontend -> bridge: \"API Calls (X-API-Key)\"bridge -> db: \"Supabase Service Role\"bridge -> whatsapp: \"Puppeteer\"bridge -> groq: \"LLM API\"```" [level=1] [ref=e301]':
+                  - generic [ref=e303]: "Kairo Architecture```diagram[Kairo Architecture]box \"Browser\" as browserbox \"Firebase Hosting\" as hostingbox \"React SPA\" as frontendbox \"Bridge Server (Express)\" as bridgebox \"WhatsApp Web (Puppeteer)\" as whatsappbox \"Supabase (PostgreSQL)\" as dbbox \"Groq AI (LLama)\" as groqbrowser -> hosting: \"HTTPS\"hosting -> frontend: \"React App\"frontend -> db: \"Supabase Client (RLS)\"frontend -> bridge: \"API Calls (X-API-Key)\"bridge -> db: \"Supabase Service Role\"bridge -> whatsapp: \"Puppeteer\"bridge -> groq: \"LLM API\"```"
+                - paragraph [ref=e304]
+          - button [ref=e48] [cursor=pointer]:
+            - img [ref=e53]
+        - generic [ref=e236]:
+          - button [ref=e238] [cursor=pointer]:
+            - generic [ref=e239]:
+              - img [ref=e241]
+              - img [ref=e243]
+          - button "H1" [ref=e305] [cursor=pointer]:
+            - generic [ref=e248]:
+              - generic [ref=e306]: H1
+              - img [ref=e250]
+          - button [ref=e308] [cursor=pointer]:
+            - generic [ref=e309]:
+              - img [ref=e311]
+              - img [ref=e313]
+          - button "Copy Link" [ref=e316] [cursor=pointer]:
+            - generic [ref=e317]:
+              - img [ref=e318]
+              - generic [ref=e320]: Copy Link
+          - button [ref=e292] [cursor=pointer]:
+            - img [ref=e294]
+      - generic [ref=e118]:
+        - generic [ref=e120]:
+          - generic:
+            - region "Shapes" [ref=e121]:
+              - heading "Shapes" [level=2] [ref=e122]
+              - button "Insert" [ref=e127] [cursor=pointer]:
+                - img [ref=e130]
+                - generic [ref=e132]: /
+              - button "CTRLJ" [ref=e137]:
+                - img [ref=e139]
+                - generic [ref=e141]: CTRLJ
+              - generic [ref=e144]:
+                - button "V" [ref=e146] [cursor=pointer]:
+                  - img [ref=e148]
+                  - generic [ref=e150]: V
+                - button "R" [ref=e152] [cursor=pointer]:
+                  - img [ref=e154]
+                  - generic [ref=e156]: R
+                - button "O" [ref=e158] [cursor=pointer]:
+                  - img [ref=e160]
+                  - generic [ref=e162]: O
+                - button "A" [ref=e164] [cursor=pointer]:
+                  - img [ref=e166]
+                  - generic [ref=e168]: A
+                - button "L" [ref=e170] [cursor=pointer]:
+                  - img [ref=e172]
+                  - generic [ref=e174]: L
+                - button "D" [ref=e176] [cursor=pointer]:
+                  - img [ref=e178]
+                  - generic [ref=e180]: D
+                - button "T" [ref=e182] [cursor=pointer]:
+                  - img [ref=e184]
+                  - generic [ref=e186]: T
+                - generic [ref=e187]:
+                  - button "Icon" [ref=e189] [cursor=pointer]:
+                    - img [ref=e191]
+                    - generic [ref=e193]: I
+                  - generic [ref=e211]:
+                    - generic [ref=e212]:
+                      - generic [ref=e214]:
+                        - img [ref=e216]
+                        - textbox "Search icon" [ref=e219]: "ro Architecture## System Architecture\\`\\`\\`diagram[Kairo Architecture]box \"Browser\" as browserbox \"Firebase Hosting\" as hostingbox \"React SPA\" as frontendbox \"Bridge Server\" as bridgebox \"WhatsApp Web\" as whatsappbox \"Supabase\" as dbbox \"Groq AI\" as groqbrowser -> hosting: \"HTTPS\"hosting -> frontend: \"React App\"frontend -> db: \"Supabase Client (RLS)\"frontend -> bridge: \"API Calls (X-API-Key)\"bridge -> whatsapp: \"Puppeteer\"bridge -> db: \"Supabase Service Role\"bridge -> groq: \"LLM API\"\\`\\`\\`"
+                      - generic [ref=e220]:
+                        - generic [ref=e221]:
+                          - link "All Categories" [ref=e222] [cursor=pointer]:
+                            - /url: ""
+                          - text: /
+                        - generic [ref=e223]:
+                          - link "Search":
+                            - /url: ""
+                    - region "scrollable content" [ref=e228]
+                    - generic [ref=e230]:
+                      - generic [ref=e231]: rotate-ccw
+                      - generic [ref=e232]:
+                        - generic [ref=e233]: ↑↓ to navigate
+                        - generic [ref=e234]: enter to insert
+              - button "F" [ref=e198] [cursor=pointer]:
+                - img [ref=e200]
+                - generic [ref=e202]: F
+            - button "100%" [ref=e204] [cursor=pointer]:
+              - text: 100%
+              - img [ref=e205]
+          - main [ref=e207]: Drawing canvas
+        - button "?" [ref=e210] [cursor=pointer]
+  - alert [ref=e3]: Eraser
+  - iframe [ref=e4]:
+    

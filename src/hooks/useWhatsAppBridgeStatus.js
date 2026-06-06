@@ -44,8 +44,9 @@ export function useWhatsAppBridgeStatus() {
 
     loadInitial()
 
+    const channelName = `whatsapp_status:${user.id}_${Date.now()}`
     const channel = supabase
-      .channel(`whatsapp_status:${user.id}`)
+      .channel(channelName)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',

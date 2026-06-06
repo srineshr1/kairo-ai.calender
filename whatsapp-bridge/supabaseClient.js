@@ -1,5 +1,9 @@
 const { createClient } = require('@supabase/supabase-js')
 
+if (typeof WebSocket === 'undefined') {
+  try { global.WebSocket = require('ws') } catch (_) { /* native available */ }
+}
+
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 

@@ -1,0 +1,164 @@
+- generic [ref=e1]:
+  - generic [ref=e6]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e11]
+        - generic [ref=e15]: Untitled File
+      - generic [ref=e18]:
+        - button "Document" [ref=e20] [cursor=pointer]
+        - button "Both" [ref=e22] [cursor=pointer]
+        - button "Canvas" [ref=e24] [cursor=pointer]
+      - generic [ref=e26]:
+        - button "Ctrl K" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]:
+            - generic [ref=e29]: Ctrl
+            - generic [ref=e30]: K
+        - button "Sign in" [ref=e31] [cursor=pointer]
+        - button "Close Esc" [ref=e344] [cursor=pointer]:
+          - img [ref=e34]
+          - text: Close
+          - generic [ref=e346]: Esc
+    - generic [ref=e36]:
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e41]:
+            - generic [ref=e43]: Untitled File
+            - textbox [ref=e44]:
+              - generic [ref=e321]: "# Kairo Architecture"
+              - generic [ref=e322]: "```diagram"
+              - generic [ref=e323]: "[Kairo Architecture]"
+              - generic [ref=e324]: box "Browser" as browser
+              - generic [ref=e325]: box "Firebase Hosting" as hosting
+              - generic [ref=e326]: box "React SPA" as frontend
+              - generic [ref=e327]: box "Bridge Server (Express)" as bridge
+              - generic [ref=e328]: box "WhatsApp Web (Puppeteer)" as whatsapp
+              - generic [ref=e329]: box "Supabase (PostgreSQL)" as db
+              - generic [ref=e330]: box "Groq AI (LLama)" as groq
+              - generic [ref=e331]: "browser -> hosting: \"HTTPS\""
+              - generic [ref=e332]: "hosting -> frontend: \"React App\""
+              - generic [ref=e333]: "frontend -> db: \"Supabase Client (RLS)\""
+              - generic [ref=e334]: "frontend -> bridge: \"API Calls (X-API-Key)\""
+              - generic [ref=e335]: "bridge -> db: \"Supabase Service Role\""
+              - generic [ref=e336]: "bridge -> whatsapp: \"Puppeteer\""
+              - generic [ref=e337]: "bridge -> groq: \"LLM API\""
+              - generic [ref=e338]: "```"
+          - button [ref=e48] [cursor=pointer]:
+            - img [ref=e53]
+        - generic [ref=e236]:
+          - button [ref=e238] [cursor=pointer]:
+            - generic [ref=e239]:
+              - img [ref=e241]
+              - img [ref=e243]
+          - button "H1" [ref=e305] [cursor=pointer]:
+            - generic [ref=e248]:
+              - generic [ref=e306]: H1
+              - img [ref=e250]
+          - button [ref=e308] [cursor=pointer]:
+            - generic [ref=e309]:
+              - img [ref=e311]
+              - img [ref=e313]
+          - button "Copy Link" [ref=e316] [cursor=pointer]:
+            - generic [ref=e317]:
+              - img [ref=e318]
+              - generic [ref=e320]: Copy Link
+          - button [ref=e292] [cursor=pointer]:
+            - img [ref=e294]
+      - generic [ref=e118]:
+        - generic [ref=e120]:
+          - generic:
+            - region "Shapes" [ref=e121]:
+              - heading "Shapes" [level=2] [ref=e122]
+              - button "Insert" [ref=e127] [cursor=pointer]:
+                - img [ref=e130]
+                - generic [ref=e132]: /
+              - button "CTRLJ" [ref=e137]:
+                - img [ref=e139]
+                - generic [ref=e141]: CTRLJ
+              - generic [ref=e144]:
+                - button "V" [ref=e146] [cursor=pointer]:
+                  - img [ref=e148]
+                  - generic [ref=e150]: V
+                - button "R" [ref=e152] [cursor=pointer]:
+                  - img [ref=e154]
+                  - generic [ref=e156]: R
+                - button "O" [ref=e158] [cursor=pointer]:
+                  - img [ref=e160]
+                  - generic [ref=e162]: O
+                - button "A" [ref=e164] [cursor=pointer]:
+                  - img [ref=e166]
+                  - generic [ref=e168]: A
+                - button "L" [ref=e170] [cursor=pointer]:
+                  - img [ref=e172]
+                  - generic [ref=e174]: L
+                - button "D" [ref=e176] [cursor=pointer]:
+                  - img [ref=e178]
+                  - generic [ref=e180]: D
+                - button "T" [ref=e182] [cursor=pointer]:
+                  - img [ref=e184]
+                  - generic [ref=e186]: T
+                - button "Icon" [ref=e189] [cursor=pointer]:
+                  - img [ref=e191]
+                  - generic [ref=e193]: I
+              - button "F" [ref=e198] [cursor=pointer]:
+                - img [ref=e200]
+                - generic [ref=e202]: F
+            - button "100%" [ref=e204] [cursor=pointer]:
+              - text: 100%
+              - img [ref=e205]
+          - main [ref=e207]: Drawing canvas
+        - button "?" [ref=e210] [cursor=pointer]
+    - generic [ref=e348]:
+      - generic [ref=e349]:
+        - generic [ref=e351]: New Chat
+        - generic [ref=e352]:
+          - button [ref=e354] [cursor=pointer]:
+            - img [ref=e355]
+          - button [ref=e359] [cursor=pointer]:
+            - img [ref=e360]
+      - generic [ref=e364]:
+        - generic [ref=e634]:
+          - generic [ref=e636]:
+            - heading "What would you like to create?" [level=3] [ref=e637]
+            - generic [ref=e638]:
+              - button "Architecture Diagram" [ref=e639] [cursor=pointer]:
+                - img [ref=e641]
+                - generic [ref=e648]: Architecture Diagram
+              - button "Flow Chart" [ref=e649] [cursor=pointer]:
+                - img [ref=e651]
+                - generic [ref=e660]: Flow Chart
+              - button "Entity Relationship" [ref=e661] [cursor=pointer]:
+                - img [ref=e663]
+                - generic [ref=e669]: Entity Relationship
+              - button "Sequence Diagram" [ref=e670] [cursor=pointer]:
+                - img [ref=e672]
+                - generic [ref=e678]: Sequence Diagram
+              - button "BPMN Diagram" [ref=e679] [cursor=pointer]:
+                - img [ref=e681]
+                - generic [ref=e685]: BPMN Diagram
+              - button "Document" [ref=e686] [cursor=pointer]:
+                - img [ref=e688]
+                - generic [ref=e691]: Document
+          - generic [ref=e692]:
+            - heading "Already have something to start with?" [level=3] [ref=e693]
+            - generic [ref=e694]:
+              - button "Template" [ref=e695] [cursor=pointer]:
+                - img [ref=e697]
+                - generic [ref=e699]: Template
+              - button "File" [ref=e700] [cursor=pointer]:
+                - img [ref=e702]
+                - generic [ref=e705]: File
+              - button "Git Repo" [ref=e706] [cursor=pointer]:
+                - img [ref=e708]
+                - generic [ref=e710]: Git Repo
+        - generic [ref=e445]:
+          - textbox "Describe what to create or edit. Press / to add references, files, or options." [active] [ref=e447]:
+            - /placeholder: "Describe what to create or edit.\nPress / to add references, files, or options."
+          - generic [ref=e448]:
+            - button [ref=e452] [cursor=pointer]:
+              - img [ref=e453]
+            - generic [ref=e456]:
+              - button [disabled]:
+                - img
+  - alert [ref=e3]: Eraser
+  - iframe [ref=e4]:
+    

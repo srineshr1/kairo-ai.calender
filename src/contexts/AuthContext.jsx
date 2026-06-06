@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [authEnabled, setAuthEnabled] = useState(isAuthRequired())
+  const bridgeCredsFetching = React.useRef(false)
   
   const supabase = getSupabaseClient()
 
@@ -25,11 +26,20 @@ export const AuthProvider = ({ children }) => {
    * Fetch (or create) the user's bridge API key from Supabase, set it on the
    * client. Source of truth lives in `bridge_api_keys` — bridge validates
    * against the same table via service role.
+   * Times out after 8 seconds so it never blocks the auth loading state.
    */
   const ensureBridgeCredentials = async (userId) => {
     if (!userId || !supabase) return null
+    if (bridgeCredsFetching.current) return null
+    bridgeCredsFetching.current = true
     try {
-      const { data, error } = await supabase.rpc('get_or_create_bridge_api_key')
+      const result = await Promise.race([
+        supabase.rpc('get_or_create_bridge_api_key'),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Bridge RPC timed out')), 8000)
+        ),
+      ])
+      const { data, error } = result
       if (error) throw error
       const apiKey = Array.isArray(data) ? data[0]?.api_key : data?.api_key
       if (!apiKey) throw new Error('RPC returned no api_key')
@@ -39,6 +49,8 @@ export const AuthProvider = ({ children }) => {
       console.error('[Auth] Failed to fetch bridge API key:', err.message)
       setBridgeCredentials(null, null)
       return null
+    } finally {
+      bridgeCredsFetching.current = false
     }
   }
 
@@ -51,16 +63,16 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
-    // Get initial session
+    // Get initial session — set loading=false regardless of outcome
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      
-      // Register with bridge if user is logged in
-      if (session?.user) {
-        await ensureBridgeCredentials(session.user.id)
-      }
-      
+      if (session?.user) ensureBridgeCredentials(session.user.id)
+    }).catch((err) => {
+      console.error('[Auth] getSession failed:', err.message)
+      setSession(null)
+      setUser(null)
+    }).finally(() => {
       setLoading(false)
     })
 
@@ -76,17 +88,17 @@ export const AuthProvider = ({ children }) => {
         return next
       })
 
-      // Register with bridge when user signs in
-      if (session?.user && _event === 'SIGNED_IN') {
-        await ensureBridgeCredentials(session.user.id)
-      }
-
       // Clear bridge credentials on sign out
       if (_event === 'SIGNED_OUT') {
         setBridgeCredentials(null, null)
       }
 
       setLoading(false)
+
+      // Fire-and-forget: register with bridge when user signs in
+      if (session?.user && _event === 'SIGNED_IN') {
+        ensureBridgeCredentials(session.user.id)
+      }
     })
 
     return () => subscription.unsubscribe()
