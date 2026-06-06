@@ -56,10 +56,14 @@ function authHeaders() {
   if (!currentUserId) {
     throw new WhatsAppBridgeError('Bridge credentials not set', null)
   }
-  return {
+  const headers = {
     'X-User-ID': currentUserId,
     'Content-Type': 'application/json',
   }
+  if (currentApiKey) {
+    headers['X-API-Key'] = currentApiKey
+  }
+  return headers
 }
 
 async function bridgeFetch(path, { method = 'GET', body } = {}) {
