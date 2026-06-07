@@ -654,10 +654,28 @@ select:focus-visible,
 /* Chat panel */
 .chat-panel {
   background: var(--theme-panel);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.chat-header {
+  background: color-mix(in srgb, var(--theme-panel) 80%, transparent);
+  backdrop-filter: blur(12px);
 }
 .chat-user-bubble {
   background: color-mix(in srgb, var(--color-accent) 8%, var(--theme-panel) 92%);
   border: 1px solid color-mix(in srgb, var(--color-accent) 12%, var(--theme-border) 88%);
+}
+.chat-ai-bubble {
+  background: color-mix(in srgb, var(--theme-border) 20%, var(--theme-panel) 80%);
+  border: 1px solid color-mix(in srgb, var(--theme-border) 40%, transparent);
+}
+.chat-input-container {
+  background: color-mix(in srgb, var(--theme-border) 15%, var(--theme-panel) 85%);
+  border: 1px solid color-mix(in srgb, var(--theme-border) 50%, transparent);
+  transition: border-color 0.2s;
+}
+.chat-input-container:focus-within {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--theme-border) 60%);
 }
 
 /* Suggestion chips */

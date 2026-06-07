@@ -1,232 +1,255 @@
-# WhatsApp Bridge Deployment Guide
+# WhatsApp Bridge — Deployment Guide
 
-This guide covers deploying the WhatsApp Bridge server to Render using Git-connected auto-deploy.
+Deploy the WhatsApp bridge to **AWS EC2** with Docker Compose and Caddy reverse proxy.
+
+## Architecture
+
+```
+Internet ──▶ Caddy (:443, TLS) ──▶ Bridge (:3001, Docker)
+                 │                       │
+            Auto Let's Encrypt      Node.js + Express
+            Security headers         whatsapp-web.js
+            Request body limits      Puppeteer + Chromium
+```
 
 ## Prerequisites
 
-1. **Render Account** - Sign up at [render.com](https://render.com)
-2. **GitHub Repository** - Your Kairo project must be pushed to GitHub
-3. **Docker Hub Access** (optional) - Only if you need private image caching
+1. **AWS Account** with EC2 access
+2. **Key pair** (`.pem` file) for SSH
+3. **Domain or nip.io** — TLS via Let's Encrypt (nip.io works for bare IPs)
 
-## Setup (One-Time)
+## Step 1 — Launch EC2 Instance
 
-### Option A: Blueprint Deploy (render.yaml — Recommended)
+| Setting | Value |
+|---------|-------|
+| AMI | Ubuntu 22.04 LTS |
+| Instance type | **t3.small** (2 GB) recommended; t3.micro (1 GB) works with swap |
+| Storage | 20 GB gp3 |
+| Security group | Allow: SSH (22) your-IP, HTTP (80) 0.0.0.0/0, HTTPS (443) 0.0.0.0/0 |
+| Key pair | Your `.pem` key |
 
-The root `render.yaml` defines the entire service. After pushing to GitHub:
+## Step 2 — Install Docker & Caddy
 
-1. Go to [Render Dashboard](https://dashboard.render.com)
-2. Click **New** → **Blueprint**
-3. Connect your GitHub repo
-4. Render auto-detects `render.yaml` and creates the service
-
-### Option B: Manual Setup in Dashboard
-
-1. Go to [Render Dashboard](https://dashboard.render.com)
-2. Click **New** → **Web Service**
-3. Connect your GitHub repo
-4. Configure:
-   - **Name:** `kairo-bridge`
-   - **Root Directory:** `whatsapp-bridge`
-   - **Environment:** `Docker`
-   - **Health Check Path:** `/health`
-5. Add environment variables (see below)
-6. Click **Create Web Service**
-
-## Environment Variables
-
-Set these in the **Render Dashboard** → **Environment** tab:
-
-### Required Variables
-
-```env
-# Node environment
-NODE_ENV=production
-
-# Groq API Configuration
-GROQ_API_KEY=your_actual_groq_api_key_here
-GROQ_TEXT_MODEL=llama-3.1-8b-instant
-GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-
-# CORS Configuration
-CALENDAR_URL=https://kairocalender.web.app
-ALLOWED_ORIGINS=https://kairocalender.web.app,https://kairocalender.firebaseapp.com,https://kairo.srinesh.in
-
-# Authentication
-BRIDGE_REQUIRE_AUTH=true
-
-# Supabase (single source of truth for state)
-# Service role key — server only. NEVER ship to frontend.
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...service_role_key
-
-# Render sets PORT automatically - DO NOT set PORT or BRIDGE_PORT
-```
-
-### Supabase Migration
-
-Run `supabase/whatsapp_rebuild.sql` in the Supabase SQL Editor before deploying.
-Adds the tables the bridge writes to: `whatsapp_status`, `whatsapp_chats`,
-`whatsapp_watched_groups`, `whatsapp_events`. Idempotent.
-
-### Important Notes
-
-- **DO NOT set PORT or BRIDGE_PORT** - Render automatically injects the correct port
-- **DO NOT commit .env files** - Set variables in Render dashboard
-- **Keep GROQ_API_KEY secure** - Never expose in frontend code
-
-## Deployment
-
-Render auto-deploys on every push to the connected branch:
+SSH into the instance:
 
 ```bash
-git push origin main
+ssh -i your-key.pem ubuntu@<ec2-public-ip>
 ```
 
-That's it. No CLI, no manual uploads. Render watches your branch and builds/deploys automatically.
-
-## Post-Deployment
-
-### 1. Get Your Render URL
-
-Your service URL will be:
-```
-https://kairo-bridge.onrender.com
-```
-
-Or check the Render dashboard for the exact URL.
-
-### 2. Update Frontend Configuration
-
-Update your **frontend `.env`** file:
-
-```env
-# Set this to your Render URL
-VITE_BRIDGE_URL=https://kairo-bridge.onrender.com
-VITE_USE_BRIDGE_PROXY=true
-```
-
-### 3. Test the Deployment
-
-Check if the bridge is running:
+Install Docker:
 
 ```bash
-curl https://kairo-bridge.onrender.com/health
+sudo apt update && sudo apt install -y docker.io docker-compose-v2
+sudo usermod -aG docker $USER
+newgrp docker
 ```
 
-Expected response:
-```json
-{
-  "status": "ok",
-  "message": "Multi-tenant WhatsApp Bridge is running",
-  "activeSessions": 0,
-  "timestamp": "2025-01-01T00:00:00.000Z"
+Install Caddy:
+
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update && sudo apt install -y caddy
+```
+
+## Step 3 — Add Swap (if t3.micro)
+
+The 1 GB t3.micro can OOM without swap. Add 4 GB:
+
+```bash
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+## Step 4 — Deploy the Bridge
+
+```bash
+# Clone the repo
+git clone https://github.com/srineshr1/kairo.git ~/kairo
+cd ~/kairo/whatsapp-bridge
+
+# Create .env from example
+cp .env.example .env
+nano .env   # fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY, GROQ_API_KEY
+
+# Build and start
+docker compose up -d --build
+```
+
+Verify:
+
+```bash
+curl http://localhost:3001/health
+```
+
+## Step 5 — Configure Caddy
+
+Write `/etc/caddy/Caddyfile`:
+
+```caddyfile
+18.61.114.31.nip.io {
+    header {
+        -Server
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    request_body {
+        max_size 1MB
+    }
+    reverse_proxy localhost:3001 {
+        flush_interval -1
+        transport http {
+            dial_timeout 10s
+            response_header_timeout 30s
+        }
+    }
 }
 ```
 
-## Monitoring
+Replace `18.61.114.31.nip.io` with your instance's public IP (nip.io resolves `<ip>.nip.io` to that IP) or your real domain.
 
-### View Logs
-
-Logs are available in the Render dashboard under the **Logs** tab. You can also stream them via:
+Reload Caddy:
 
 ```bash
-# Install Render CLI (optional — for log streaming only)
-npm install -g @render/cli
-
-# Stream logs
-render logs
+sudo systemctl reload caddy
 ```
 
-### Check Status
+Caddy auto-obtains a Let's Encrypt certificate on first request.
 
-Status and metrics are visible in the Render dashboard.
+## Step 6 — Verify
+
+```bash
+# Health check via HTTPS
+curl https://<your-domain>/health
+
+# Check security headers
+curl -sI https://<your-domain>/health | grep -i 'x-frame\|x-content\|referrer\|strict-transport'
+```
+
+## Docker Compose Reference
+
+```yaml
+services:
+  bridge:
+    build: .
+    container_name: kairo-bridge
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - bridge-sessions:/app/sessions
+    environment:
+      - NODE_ENV=production
+      - BRIDGE_REQUIRE_AUTH=true
+      - PORT=3001
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - NODE_OPTIONS=--max-old-space-size=400 --max-semi-space-size=32
+    env_file:
+      - .env
+    mem_limit: 700m
+    mem_reservation: 500m
+    memswap_limit: 1g
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const http=require('http'); const port=process.env.PORT||3001; const req=http.get({host:'127.0.0.1',port,path:'/health',timeout:5000},res=>process.exit(res.statusCode===200?0:1)); req.on('error',()=>process.exit(1)); req.on('timeout',()=>{req.destroy();process.exit(1);});\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  bridge-sessions:
+```
+
+## CI/CD — GitHub Actions
+
+Push to the `BackendChanges` branch to auto-deploy:
+
+```bash
+git push origin BackendChanges
+```
+
+The workflow (`../.github/workflows/deploy-bridge.yml`) SSHs into EC2 and runs:
+
+```bash
+cd ~/kairo && git fetch origin BackendChanges && git reset --hard origin/BackendChanges
+cd whatsapp-bridge && docker compose up -d --build
+```
+
+## Manual Deploy
+
+```bash
+ssh -i aws/kairo-bridge-key.pem ubuntu@18.61.114.31 \
+  "cd ~/kairo && git fetch origin BackendChanges && git reset --hard origin/BackendChanges && cd whatsapp-bridge && docker compose up -d --build"
+```
+
+## Security Hardening Summary
+
+| Layer | Measure |
+|-------|---------|
+| OS | 4 GB swap (prevents OOM) |
+| OS | Security group restricts SSH to known IPs |
+| Container | `mem_limit: 700m`, `memswap_limit: 1g` |
+| Node.js | `--max-old-space-size=400` |
+| Caddy | Auto-TLS, request body 1 MB max, connection timeouts |
+| Caddy | Security headers (HSTS, X-Frame-Options, etc.) |
+| App | `BRIDGE_REQUIRE_AUTH=true`, rate limits, X-API-Key validation |
+| App | API keys in Supabase (never on disk) |
 
 ## Troubleshooting
 
-### CORS Errors
-
-**Symptom:** Frontend shows "Not allowed by CORS" or "CORS error"
-
-**Solution:**
-1. Check `ALLOWED_ORIGINS` in Render dashboard includes your frontend URL
-2. Check `CALENDAR_URL` is set correctly
-3. Render auto-allows `*.onrender.com` and `*.ngrok-free.dev` domains
-4. Push a new commit to trigger redeploy, or use **Manual Deploy** → **Deploy latest commit** in dashboard
-
-### Bridge Not Connecting
-
-**Symptom:** Frontend shows "Bridge server unreachable"
-
-**Solution:**
-1. Verify the service is running in Render dashboard
-2. Check the service URL matches your `VITE_BRIDGE_URL`
-3. Wait 30-60 seconds — free-tier Render services spin down after inactivity and take a moment to wake up
-4. Test health endpoint: `curl https://kairo-bridge.onrender.com/health`
-
-### Cold Starts on Free Tier
-
-On Render's free tier, web services **spin down after 15 minutes of inactivity**. The first request after a spin-down will take 30-60 seconds to respond (Chromium startup). Use a health check ping service like [UptimeRobot](https://uptimerobot.com) to keep it warm.
-
-### Build Failures
-
-**Symptom:** Deployment fails during build
-
-**Solution:**
-1. Check the Dockerfile exists in `whatsapp-bridge/`
-2. Verify `render.yaml` at repo root has `rootDir: whatsapp-bridge`
-3. Check Render logs for specific build errors
-
-## Local Testing Before Deployment
-
-### Start Bridge Locally
+### Container won't start
 
 ```bash
+docker logs kairo-bridge
+docker compose down && docker compose up -d --build
+```
+
+### Caddy can't get TLS certificate
+
+- Port 80 must be open to 0.0.0.0/0 (Let's Encrypt HTTP challenge)
+- Check: `sudo journalctl -u caddy --no-pager | tail -20`
+
+### Instance runs out of memory
+
+```bash
+free -h                    # check RAM + swap
+docker stats kairo-bridge  # container memory
+sudo dmesg | grep -i oom   # OOM killer logs
+```
+
+If it keeps OOM-ing despite swap, upgrade to t3.small (2 GB RAM).
+
+### WhatsApp sessions lost
+
+Sessions are in the `bridge-sessions` Docker volume. Only lost if you run:
+
+```bash
+docker compose down -v   # -v deletes volumes!
+```
+
+Normal `docker compose up -d` preserves the volume.
+
+### Health check timeout
+
+On t3.micro, Chromium startup can take 30-60 seconds. The health check has a 60s `start_period` to accommodate this. If it still times out, increase `start_period` in `docker-compose.yml`.
+
+## Updating the Bridge
+
+```bash
+# SSH into EC2
+cd ~/kairo
+git pull origin main           # or your deployment branch
 cd whatsapp-bridge
-npm install
-npm start
+docker compose up -d --build   # rebuilds and restarts
 ```
 
-Bridge runs on `http://localhost:3001`
-
-### Test with ngrok (Optional)
-
-For testing with your deployed frontend:
-
-```bash
-ngrok http 3001
-```
-
-Update frontend `.env`:
-```env
-VITE_BRIDGE_URL=https://your-subdomain.ngrok-free.dev
-```
-
-## Production Checklist
-
-Before deploying to production:
-
-- [ ] Set `NODE_ENV=production` in Render
-- [ ] Set secure `BRIDGE_ADMIN_API_KEY`
-- [ ] Set `BRIDGE_REQUIRE_AUTH=true`
-- [ ] Add all frontend URLs to `ALLOWED_ORIGINS`
-- [ ] Test CORS with production frontend URL
-- [ ] Verify GROQ_API_KEY is valid
-- [ ] Remove `VITE_GROQ_API_KEY` from frontend `.env`
-- [ ] Set `VITE_USE_BRIDGE_PROXY=true` in frontend
-- [ ] Test health endpoint
-- [ ] Monitor logs for errors
-- [ ] Consider upgrading from Free to Starter plan to avoid cold starts
-
-## Security Notes
-
-1. **Never commit `.env` files** - Use Render dashboard for variables
-2. **Use bridge proxy in production** - Never expose GROQ_API_KEY in frontend
-3. **Regenerate BRIDGE_ADMIN_API_KEY** - Use a secure random key
-4. **Enable authentication** - Set `BRIDGE_REQUIRE_AUTH=true`
-5. **Limit CORS origins** - Only allow your actual frontend domains
-
-## Need Help?
-
-- Render Docs: https://docs.render.com
-- Kairo Issues: https://github.com/your-repo/kairo/issues
-- Render Status: https://status.render.com
+Or push to `BackendChanges` for CI/CD auto-deploy.

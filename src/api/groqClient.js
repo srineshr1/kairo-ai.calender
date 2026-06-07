@@ -7,7 +7,7 @@
  */
 
 import * as pdfjsLib from 'pdfjs-dist'
-import { getCurrentUserId } from './whatsappClient'
+import { getCurrentUserId, getCurrentApiKey } from './whatsappClient'
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
@@ -260,6 +260,7 @@ export async function generateText({
         ? {
             'Content-Type': 'application/json',
             'X-User-ID': bridgeUserId,
+            ...(getCurrentApiKey() && { 'X-API-Key': getCurrentApiKey() }),
           }
         : { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' }
       

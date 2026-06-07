@@ -45,6 +45,10 @@ export function getCurrentUserId() {
   return currentUserId
 }
 
+export function getCurrentApiKey() {
+  return currentApiKey
+}
+
 export function getBridgeUrl() {
   return BRIDGE_URL
 }

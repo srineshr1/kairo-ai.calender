@@ -566,68 +566,70 @@ export function useLLM() {
 
     const todayStr = fmtDate(new Date())
     const weekDates = getWeekDates()
-    
-    const compactEvents = events.map(e => ({
-      id: e.id,
-      title: e.title,
-      date: e.date,
-      time: e.time,
-      sub: e.sub || '',
-      done: e.done || false,
-    }))
-    
+
+    // Context window management: only include events from this week + 7 days ahead
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() + 14)
+    const cutoffStr = fmtDate(cutoffDate)
+    const relevantEvents = events
+      .filter(e => e.date >= todayStr && e.date <= cutoffStr)
+      .slice(0, 50) // hard cap
+      .map(e => ({ id: e.id, title: e.title, date: e.date, time: e.time, sub: e.sub || '', done: e.done || false }))
+
     const todayEvents = events.filter(e => e.date === todayStr)
     const todaySummary = todayEvents.length > 0
       ? `Today's events: ${todayEvents.map(e => `${e.title} at ${e.time}`).join(', ')}`
       : 'No events scheduled for today.'
 
-    const systemPrompt = `CRITICAL: You must ALWAYS respond with ONLY a single valid JSON object. Never return raw event arrays or data structures. Never explain yourself or add commentary outside the JSON.
+    const systemPrompt = `CRITICAL: You must ALWAYS respond with ONLY a single valid JSON object. No markdown, no explanation.
 
 You are an AI calendar assistant. Today is ${todayStr}.
-This week's dates: ${JSON.stringify(weekDates)}
-This week's days: Mon=${weekDates[0]}, Tue=${weekDates[1]}, Wed=${weekDates[2]}, Thu=${weekDates[3]}, Fri=${weekDates[4]}
+This week: Mon=${weekDates[0]}, Tue=${weekDates[1]}, Wed=${weekDates[2]}, Thu=${weekDates[3]}, Fri=${weekDates[4]}
 
 ${todaySummary}
 
-Current events (compact):
-${JSON.stringify(compactEvents, null, 2)}
+Upcoming events (next 2 weeks):
+${JSON.stringify(relevantEvents)}
 
-RESPONSE FORMAT - respond ONLY with a raw JSON object (no markdown, no fences, no explanation):
+RESPONSE FORMAT (raw JSON only):
 - Add:    {"action":"add","event":{"title":"...","date":"YYYY-MM-DD","time":"HH:MM","duration":60,"sub":"...","color":"pink|green|blue|amber|gray","recurrence":"none|daily|weekly|monthly"}}
 - Edit:   {"action":"edit","id":"existing_id","changes":{"title":"...","date":"...","time":"..."}}
 - Delete: {"action":"delete","id":"existing_id"}
 - Chat:   {"action":"none","reply":"your response here"}
 
-TIMETABLE IMPORT: If user wants to import a timetable, schedule, or class roster, respond with:
-{"action":"none","reply":"To import a timetable, please click the 📎 attachment button and upload an image or PDF of your timetable. I'll extract the classes and help you add them to your calendar!"}
+RULES:
+- For questions about events/schedule, use {"action":"none","reply":"..."}
+- NEVER return raw arrays. Summarize in natural language.
+- NEVER delete based on vague commands. Only delete specific named events.
+- For "this week" additions, generate MULTIPLE {"action":"add"} objects.
+- Infer dates from context (e.g. "Friday" = next Friday from today).
+- For timetable imports, tell user to use 📎 button.
+- Colors: pink, green, blue, amber, gray`
 
-EXAMPLES:
+    // Context window management: include recent conversation history (last 10 messages max)
+    const { messages: chatHistory } = useChatStore.getState()
+    const MAX_HISTORY = 10
+    const recentHistory = chatHistory
+      .slice(-(MAX_HISTORY + 1), -1) // exclude the message we just added
+      .map(m => ({ role: m.role === 'ai' ? 'assistant' : m.role, content: m.text }))
+      .filter(m => m.role === 'user' || m.role === 'assistant')
 
-User: "What do I have today?"
-RIGHT: {"action":"none","reply":"You have 2 events today: Stand-up at 9:00 AM and Design Review at 2:00 PM."}
-
-User: "Add lunch at 1pm tomorrow"
-RIGHT: {"action":"add","event":{"title":"Lunch","date":"2026-03-19","time":"13:00","duration":60,"sub":"","color":"amber","recurrence":"none"}}
-
-User: "Import my timetable" or "Add my class schedule"
-RIGHT: {"action":"none","reply":"To import a timetable, please click the 📎 attachment button and upload an image or PDF of your timetable. I'll extract the classes and help you add them to your calendar!"}
-
-CRITICAL RULES:
-- For ANY question about events, schedule, or "what do I have", ALWAYS use {"action":"none","reply":"..."}
-- NEVER return raw event arrays like [{"id":...}] or the full events object
-- ALWAYS summarize events in natural language inside the reply field
-- NEVER delete events based on vague commands like "clear tasks", "remove all", "clear everything"
-- ONLY delete when user specifies a SPECIFIC event by name
-- When user says "this week", "every day this week", generate MULTIPLE {"action":"add"} objects
-- Infer dates from context (e.g. "Friday" = next Friday from today ${todayStr})
-- Color options: pink, green, blue, amber, gray
-- Always return valid JSON only, nothing else`
+    // Trim history if total estimated tokens too large (~4 chars per token, cap at 6000 tokens for history)
+    const MAX_HISTORY_CHARS = 24000
+    let historyChars = 0
+    const trimmedHistory = []
+    for (let i = recentHistory.length - 1; i >= 0; i--) {
+      historyChars += recentHistory[i].content.length
+      if (historyChars > MAX_HISTORY_CHARS) break
+      trimmedHistory.unshift(recentHistory[i])
+    }
 
     try {
       const data = await generateText({
         model: MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
+          ...trimmedHistory,
           { role: 'user', content: userText }
         ],
         temperature: 0.1,

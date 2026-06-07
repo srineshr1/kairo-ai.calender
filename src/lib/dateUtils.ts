@@ -87,8 +87,11 @@ export const parseDate = (s: string): Date => {
  * @example
  * getWorkWeekStart(new Date('2024-03-21')) // Monday of that week
  */
-export const getWorkWeekStart = (d: Date): Date =>
-  startOfWeek(d, { weekStartsOn: 1 })
+export const getWorkWeekStart = (d: Date): Date => {
+  // If Sunday (day 0), treat it as part of the upcoming week so the view shows this week
+  if (d.getDay() === 0) return addDays(d, 1)
+  return startOfWeek(d, { weekStartsOn: 1 })
+}
 
 /**
  * Get 5 work weekdays (Monday - Friday) from a given week start

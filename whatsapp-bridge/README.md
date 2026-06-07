@@ -1,170 +1,162 @@
 # WhatsApp Bridge Server
 
-Multi-tenant WhatsApp bridge server for Kairo calendar app. Handles WhatsApp message processing, event extraction using Groq AI, and serves as a secure proxy for the Groq API.
+Multi-tenant WhatsApp bridge server for the Kairo calendar app. Handles WhatsApp message processing, event extraction using Groq AI, and serves as a secure proxy for the Groq API. Deployed on AWS EC2 behind a Caddy reverse proxy.
 
 ## Quick Start
 
 ### Local Development
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your GROQ_API_KEY
-   ```
-
-3. **Start server:**
-   ```bash
-   npm start
-   ```
-
-   Server runs on `http://localhost:3001`
-
-4. **Verify it's running:**
-   ```bash
-   curl http://localhost:3001/health
-   ```
-
-### Production Deployment (Render)
-
-Render auto-deploys on every `git push` to the connected branch. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
-
-**Quick setup:**
 ```bash
-# One-time: create Web Service on https://dashboard.render.com
-# Point it to your GitHub repo, rootDir: whatsapp-bridge
-# Or use render.yaml (Blueprint) at the repo root
+npm install
+cp .env.example .env   # edit with your SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GROQ_API_KEY
+npm run dev             # starts on http://localhost:3001
+```
 
-# Then just push:
-git push origin main
+Verify: `curl http://localhost:3001/health`
+
+### Production (EC2 + Docker)
+
+```bash
+# On the EC2 instance:
+cd ~/kairo/whatsapp-bridge
+docker compose up -d --build
+```
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for the full EC2 setup guide.
+
+## Architecture
+
+```
+Internet ──▶ Caddy (:443, TLS) ──▶ Bridge (:3001, Docker)
+                 │                       │
+            Security headers          Express API
+            Request limits            whatsapp-web.js
+            Auto-TLS (LE)             Chromium headless
 ```
 
 ## Project Structure
 
 ```
 whatsapp-bridge/
-├── bridge-server.js       # Express server with CORS & auth
-├── sessions/              # WhatsApp session management
-│   └── manager.js         # Session lifecycle manager
-├── middleware/            # Express middleware
-│   ├── auth.js            # Auth middleware
-│   └── bridgeAuth.js      # Bridge-specific auth
-├── utils/                 # Utilities
-│   └── userData.js        # User data persistence
-├── config/                # Configuration files
-├── whatsappProcessor.js   # Message processing logic
-├── analyzer.js            # AI-powered content analysis
-├── extractor.js           # Event extraction utilities
-├── calendarPush.js        # Event queue management
-├── deploy.sh              # Deploy info script (Linux/Mac)
-├── deploy.bat             # Deploy info script (Windows)
-├── DEPLOYMENT.md          # Detailed deployment guide
-├── TROUBLESHOOTING.md     # CORS & connection fixes
-├── Dockerfile             # Production container config
-└── package.json           # Dependencies & scripts
+├── bridge-server.js       # Express API (health, auth-cookie, connect, disconnect, chat)
+├── sessionManager.js      # Per-user WhatsApp session lifecycle
+├── whatsappProcessor.js   # Message listener → event extraction pipeline
+├── extractor.js           # LLM prompt engineering for event extraction
+├── supabaseClient.js      # Admin + user-scoped Supabase clients
+├── middleware/
+│   └── bridgeAuth.js      # Cookie JWT + X-API-Key header validation
+├── Dockerfile             # Node 20 Alpine + Chromium
+├── docker-compose.yml     # Production container + resource limits
+└── .env                   # Secrets (never committed)
 ```
 
 ## Environment Variables
 
-Required variables (set in Render dashboard for production):
+Set in `.env` on the EC2 instance:
 
-```env
-# Required
-GROQ_API_KEY=your_groq_api_key_here
-CALENDAR_URL=https://kairocalender.web.app
-ALLOWED_ORIGINS=https://kairocalender.web.app,https://kairo.srinesh.in
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key (admin) |
+| `SUPABASE_ANON_KEY` | Yes | Anon key for user-scoped client |
+| `GROQ_API_KEY` | Yes | Groq API key for LLM inference |
+| `SUPABASE_JWT_SECRET` | No | Signs user JWT for RLS; falls back to admin if unset |
+| `BRIDGE_REQUIRE_AUTH` | No | Defaults `true` in production |
+| `PORT` | No | Defaults `3001` |
 
-# Optional
-GROQ_TEXT_MODEL=llama-3.1-8b-instant
-GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-BRIDGE_PORT=3001  # Don't set in production (Render auto-injects PORT)
-BRIDGE_REQUIRE_AUTH=true
-BRIDGE_ADMIN_API_KEY=your_secure_admin_key
-```
-
-See [.env.example](./.env.example) for full reference.
+`NODE_ENV=production` is set in `docker-compose.yml`.
 
 ## API Endpoints
 
-### Public Endpoints
+### Public
 
-- `GET /health` - Health check
-- `POST /register` - Register new user and get API key
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Health check (returns JSON) |
 
-### Authenticated Endpoints
+### Auth-required
 
-All require `X-User-ID` and `X-API-Key` headers:
+All require `X-User-ID` + `X-API-Key` headers (or cookie JWT):
 
-- `POST /users/:userId/connect` - Connect WhatsApp
-- `POST /users/:userId/disconnect` - Disconnect WhatsApp
-- `POST /users/:userId/logout` - Logout (delete session)
-- `GET /users/:userId/status` - Get connection status & QR code
-- `GET /users/:userId/groups` - Get WhatsApp groups
-- `GET /users/:userId/events` - Get pending events
-- `DELETE /users/:userId/events` - Clear event queue
-- `POST /users/:userId/chat` - Groq API proxy endpoint
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/users/:userId/auth-cookie` | Set httpOnly cookie (public, validates userId) |
+| `POST` | `/users/:userId/connect` | Start WhatsApp session |
+| `POST` | `/users/:userId/disconnect` | Stop WhatsApp session |
+| `POST` | `/users/:userId/logout` | Delete session + clear auth |
+| `POST` | `/users/:userId/chat` | Groq proxy (30 req/min per user) |
 
-See API docs for full details.
+## Auth Flow
+
+1. Frontend gets API key from Supabase via `get_or_create_bridge_api_key()` RPC
+2. Credentials sent as `X-User-ID` + `X-API-Key` headers on every request
+3. Bridge middleware validates against `bridge_api_keys` table in Supabase
+4. Cookie JWT is also supported (set via `/auth-cookie` endpoint)
+
+## Security Hardening
+
+| Layer | Measure | Value |
+|-------|---------|-------|
+| OS | Swap space | 4 GB (prevents OOM kills on 1 GB t3.micro) |
+| Container | Memory limit | 700 MiB hard, 500 MiB soft, 1 GiB swap cap |
+| Node.js | V8 heap cap | `--max-old-space-size=400 --max-semi-space-size=32` |
+| Caddy | TLS | Auto Let's Encrypt, HSTS |
+| Caddy | Request body limit | 1 MB max |
+| Caddy | Timeouts | 10s dial, 30s response header |
+| Caddy | Security headers | X-Frame-Options, X-Content-Type-Options, Referrer-Policy, hide Server |
+| App | Rate limits | 120 req/min per user, 30 req/min for Groq |
+| App | Auth | All sensitive endpoints require validated credentials |
 
 ## CORS Configuration
 
-The bridge automatically allows:
-- All URLs in `ALLOWED_ORIGINS` environment variable
-- `CALENDAR_URL` environment variable
-- All `localhost` ports (5173-5177) for development
-- All `.ngrok-free.dev` and `.ngrok.io` domains
-- All `.onrender.com`, `.railway.app`, and `.up.railway.app` domains
-
-For CORS issues, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+The bridge allows:
+- `localhost:5173-5175` (Vite dev server)
+- `kairocalender.web.app`, `kairocalender.firebaseapp.com`, `kairo.srinesh.in`
+- Wildcards: `*.onrender.com`, `*.ngrok-free.dev`, `*.ngrok.io`, `*.nip.io`
+- CORS credentials enabled
 
 ## Common Issues
 
-### Frontend can't connect to bridge
+### Bridge health check fails
 
-1. **Check bridge is running:**
-   ```bash
-   curl http://localhost:3001/health
-   ```
+```bash
+# Check container is running
+docker ps | grep kairo-bridge
 
-2. **Check CORS configuration:**
-   - Ensure frontend URL is in `ALLOWED_ORIGINS`
-   - Check bridge logs for CORS errors
+# Check logs
+docker logs --tail 50 kairo-bridge
 
-3. **For local dev:** Leave `VITE_BRIDGE_URL` empty in frontend `.env`
+# Check Caddy
+sudo systemctl status caddy
+```
 
-4. **For production:** Set `VITE_BRIDGE_URL` to your Render URL
+### Frontend can't connect
 
-See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for detailed fixes.
+1. Verify `VITE_BRIDGE_URL=https://18.61.114.31.nip.io` in frontend `.env.production`
+2. Check CORS origins include your frontend URL
+3. Ensure security group allows port 443 from your IP
 
-### Cold starts (free tier)
+### Container keeps restarting
 
-On Render's free plan, services sleep after 15 min of inactivity. The first request wakes it up (30-60s delay). Upgrade to Starter plan or use a ping service to keep it awake.
+The container has a 700 MiB memory limit. If Puppeteer + Chromium spike above that, Docker kills it and restarts (health check catches it). Check with:
+```bash
+docker stats kairo-bridge
+docker logs --tail 100 kairo-bridge
+```
+
+### WhatsApp sessions lost after reboot
+
+Sessions are persisted in the `bridge-sessions` Docker volume. If the volume is lost, users need to re-scan the QR code.
 
 ## Scripts
 
-- `npm start` - Start production server
-- `npm run dev` - Start with auto-reload (Node 18+)
-
-## Security Notes
-
-1. **Never commit `.env` files** - They contain sensitive API keys
-2. **Use bridge proxy in production** - Don't expose `GROQ_API_KEY` in frontend
-3. **Set `BRIDGE_REQUIRE_AUTH=true`** in production
-4. **Use secure `BRIDGE_ADMIN_API_KEY`** - Generate a long random string
-5. **Limit CORS origins** - Only allow trusted frontend domains
+| Command | Purpose |
+|---------|---------|
+| `npm start` | Production server (port 3001) |
+| `npm run dev` | Development with --watch (Node 18+) |
 
 ## Documentation
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete Render deployment guide
-- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Fix CORS & connection issues
-- [.env.example](./.env.example) - Environment variable reference
-
-## Support
-
-- Render docs: https://docs.render.com
-- Groq docs: https://console.groq.com/docs
-- Report issues: https://github.com/your-repo/kairo/issues
+- [DEPLOYMENT.md](./DEPLOYMENT.md) — EC2 + Docker + Caddy deployment guide
+- [../SETUP.md](../SETUP.md) — Full project setup guide
+- [../AGENTS.md](../AGENTS.md) — Agent reference (commands, env vars, auth flow)

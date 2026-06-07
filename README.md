@@ -80,28 +80,30 @@ Chat with Kairo to manage your calendar:
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        KAIRO ARCHITECTURE                         │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                    │
-│  ┌─────────────┐     ┌──────────────┐     ┌──────────────────┐   │
-│  │   React     │────▶│   Supabase   │◀────│ WhatsApp Bridge  │   │
-│  │   SPA       │     │   (BaaS)     │     │ (Node/EC2)       │   │
-│  │             │     │              │     │                  │   │
-│  │  • Calendar │     │  • Auth/JWT  │     │  • whatsapp-web  │   │
-│  │  • AI Chat  │     │  • Realtime  │     │  • Session Mgr   │   │
-│  │  • DnD      │     │  • Postgres  │     │  • Event Queue   │   │
-│  └──────┬──────┘     └──────────────┘     └────────┬─────────┘   │
-│         │                                          │              │
-│         │            ┌──────────────┐              │              │
-│         └───────────▶│   Groq API   │◀─────────────┘              │
-│                      │   (LLM/AI)   │                             │
-│                      │              │                             │
-│                      │ Llama 3.3 70B│                             │
-│                      │ Llama 4 Scout│                             │
-│                      └──────────────┘                             │
-│                                                                    │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                         KAIRO ARCHITECTURE                            │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  ┌─────────────┐     ┌──────────────┐     ┌──────┐   ┌────────────┐  │
+│  │   React     │────▶│   Supabase   │◀────│Caddy │◀──│ WhatsApp   │  │
+│  │   SPA       │     │   (BaaS)     │     │ 443  │   │ Bridge     │  │
+│  │             │     │              │     │  TLS │   │ :3001      │  │
+│  │  • Calendar │     │  • Auth/JWT  │     │      │   │            │  │
+│  │  • AI Chat  │     │  • Realtime  │     │ Rate │   │ • whatsapp │  │
+│  │  • DnD      │     │  • Postgres  │     │Limit │   │ • Sessions │  │
+│  └──────┬──────┘     └──────────────┘     └──────┘   │ • Events   │  │
+│         │                                          │   └─────┬──────┘  │
+│         │            ┌──────────────┐              │         │         │
+│         └───────────▶│   Groq API   │◀─────────────┘─────────┘         │
+│                      │   (LLM/AI)   │                                   │
+│                      │              │                                   │
+│                      │ Llama 3.3 70B│                                   │
+│                      │ Llama 4 Scout│                                   │
+│                      └──────────────┘                                   │
+│                      ─────────────────                                  │
+│                      AWS EC2 t3.micro (Docker)                          │
+│                                                                        │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Tech Stack
@@ -114,6 +116,7 @@ Chat with Kairo to manage your calendar:
 | **AI/LLM** | Groq API (Llama 3.3 70B, Llama 4 Scout) | Event extraction, chat, vision/OCR |
 | **WhatsApp** | Node.js + whatsapp-web.js + Chromium | Multi-tenant bridge on Docker |
 | **Hosting** | Firebase Hosting (frontend) | Global CDN, auto-SSL |
+| **Reverse Proxy** | Caddy v2 (on EC2) | Auto-TLS, security headers, request limits |
 | **Bridge Server** | AWS EC2 t3.micro (Docker Compose) | WhatsApp sessions, Groq proxy |
 | **CI/CD** | GitHub Actions | Auto-deploy bridge to EC2 on push |
 
@@ -121,16 +124,23 @@ Chat with Kairo to manage your calendar:
 
 1. **Multi-tenant WhatsApp Bridge on EC2**
    - Each user gets an isolated headless Chromium session
-   - Docker Compose with health checks and auto-restart
+   - Docker Compose with health checks and auto-restart (`unless-stopped`)
    - Sessions persist via LocalAuth on the EC2 filesystem
    - GitHub Actions CI/CD for automated deployment
 
-2. **Groq for LLM Inference**
+2. **Caddy Reverse Proxy + Security Hardening**
+   - Caddy v2 provides auto-TLS (Let's Encrypt) on port 443
+   - Request body size cap (1 MB), connection timeouts
+   - Security headers: HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+   - Container resource limits: 700 MiB memory, 400 MiB V8 heap, 1 GiB swap cap
+   - OS-level: 4 GB swap prevents OOM kills on the 1 GB instance
+
+3. **Groq for LLM Inference**
    - ~200ms inference (vs 2-3s for alternatives)
    - Vision model for timetable images and PDFs
    - API keys stay server-side, proxied through bridge
 
-3. **Supabase as Backend**
+4. **Supabase as Backend**
    - Row Level Security ensures data isolation per user
    - Realtime subscriptions for instant UI updates
    - Built-in auth with Google OAuth support
@@ -162,7 +172,8 @@ kairo/
 │   ├── supabaseClient.js    # Admin + user-scoped Supabase clients
 │   ├── middleware/           # Auth middleware (cookie + header validation)
 │   ├── Dockerfile           # Node 20 Alpine + Chromium
-│   └── docker-compose.yml   # Production orchestration
+│   ├── docker-compose.yml   # Production orchestration + resource limits
+│   └── Caddyfile            # Caddy reverse proxy (TLS, headers, rate limit)
 │
 ├── docs/
 │   ├── architecture.html    # Interactive architecture documentation
@@ -179,7 +190,7 @@ kairo/
 | Service | Platform | URL |
 |---------|----------|-----|
 | Frontend | Firebase Hosting | [kairocalender.web.app](https://kairocalender.web.app) |
-| Bridge Server | AWS EC2 (Docker) | `18.61.114.31:3001` |
+| Bridge Server | AWS EC2 (Docker + Caddy) | `https://18.61.114.31.nip.io` |
 | Database | Supabase Cloud | Managed PostgreSQL |
 | AI/LLM | Groq Cloud | API-based inference |
 
@@ -227,7 +238,8 @@ npm install && npm run dev
 ## Future Roadmap
 
 - [ ] Google Calendar sync (OAuth)
-- [ ] TLS on bridge (Caddy reverse proxy)
+- [x] TLS on bridge (Caddy reverse proxy)
+- [x] Security hardening (resource limits, headers, swap)
 - [ ] Telegram integration
 - [ ] Shared calendars for teams
 - [ ] Voice input for event creation
