@@ -598,6 +598,7 @@ RESPONSE FORMAT (raw JSON only):
 - Chat:   {"action":"none","reply":"your response here"}
 
 RULES:
+- If the user's request is missing essential details (title, time, or what the event is about), ASK for them using {"action":"none","reply":"..."} instead of guessing. Example: "Create event tomorrow" → ask what event and what time.
 - For questions about events/schedule, use {"action":"none","reply":"..."}
 - NEVER return raw arrays. Summarize in natural language.
 - NEVER delete based on vague commands. Only delete specific named events.
