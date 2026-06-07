@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useState, useId, useCallback } from 'react'
+import React, { useRef, useEffect, useState, useId, useCallback, useMemo } from 'react'
 import { useChatStore } from '../../store/useChatStore'
 import { useLLM } from './useLLM'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { WIZARD_STEPS } from './timetablePrompts'
 
 const ACCEPTED_FILE_TYPES = 'image/png,image/jpeg,image/jpg,image/webp,application/pdf'
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -12,6 +13,69 @@ const SUGGESTIONS = [
   { text: 'Find free time this week', icon: '🔍' },
   { text: 'Upload a timetable to import', icon: '📎' },
 ]
+
+// Quick reply options per wizard step
+const QUICK_REPLIES = {
+  [WIZARD_STEPS.ASK_DATE_RANGE]: [
+    { label: 'Next 3 months', value: 'next 3 months' },
+    { label: 'This semester', value: 'this semester' },
+    { label: 'June 9 to Sep 30', value: 'June 9 to September 30' },
+  ],
+  [WIZARD_STEPS.ASK_HOLIDAYS]: [
+    { label: 'Yes, exclude all', value: 'yes' },
+    { label: 'No, keep all', value: 'no' },
+  ],
+  [WIZARD_STEPS.CONFIRM]: [
+    { label: '✓ Confirm', value: 'confirm' },
+    { label: '✗ Cancel', value: 'cancel' },
+  ],
+}
+
+// AI icon — sparkle
+function AiIcon({ className = 'w-3.5 h-3.5' }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 16l.394 1.183a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" />
+    </svg>
+  )
+}
+
+// Lightweight markdown renderer for AI messages
+function FormattedText({ text }) {
+  const parts = useMemo(() => {
+    if (!text) return []
+    return text.split('\n').map((line, i) => {
+      // Bold headers: **text**
+      let processed = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+      // Bullet points: • or - at start
+      const isBullet = /^\s*[•\-–]\s/.test(line)
+      if (isBullet) {
+        processed = processed.replace(/^\s*[•\-–]\s*/, '')
+        return { type: 'bullet', html: processed, key: i }
+      }
+      // Empty line
+      if (!line.trim()) return { type: 'break', key: i }
+      return { type: 'text', html: processed, key: i }
+    })
+  }, [text])
+
+  return (
+    <div className="text-[13px] leading-relaxed theme-text-primary break-words">
+      {parts.map((part) => {
+        if (part.type === 'break') return <div key={part.key} className="h-2" />
+        if (part.type === 'bullet') {
+          return (
+            <div key={part.key} className="flex gap-2 pl-1 py-0.5">
+              <span className="text-accent/70 mt-[2px] text-[10px]">●</span>
+              <span dangerouslySetInnerHTML={{ __html: part.html }} />
+            </div>
+          )
+        }
+        return <div key={part.key} dangerouslySetInnerHTML={{ __html: part.html }} />
+      })}
+    </div>
+  )
+}
 
 function TypingIndicator() {
   return (
@@ -31,12 +95,7 @@ function FileAttachment({ attachment }) {
   if (attachment.type === 'image' && !imgError) {
     return (
       <div className="mt-2 rounded-lg overflow-hidden max-w-[200px] border border-white/5">
-        <img
-          src={attachment.url}
-          alt={attachment.name || 'Attached image'}
-          className="w-full h-auto object-cover"
-          onError={() => setImgError(true)}
-        />
+        <img src={attachment.url} alt={attachment.name || 'Attached image'} className="w-full h-auto object-cover" onError={() => setImgError(true)} />
       </div>
     )
   }
@@ -56,12 +115,8 @@ function ChatMessage({ msg }) {
     return (
       <div className="flex justify-end mb-3 animate-fadeUp">
         <div className="max-w-[80%] rounded-2xl rounded-br-md px-4 py-2.5 bg-accent text-white shadow-sm">
-          <p className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">
-            {msg.text}
-          </p>
-          {msg.attachments?.map((attachment, idx) => (
-            <FileAttachment key={idx} attachment={attachment} />
-          ))}
+          <p className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">{msg.text}</p>
+          {msg.attachments?.map((attachment, idx) => <FileAttachment key={idx} attachment={attachment} />)}
         </div>
       </div>
     )
@@ -70,24 +125,40 @@ function ChatMessage({ msg }) {
   return (
     <div className="flex gap-2.5 mb-3 animate-fadeUp">
       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 border border-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <svg className="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-        </svg>
+        <AiIcon className="w-3.5 h-3.5 text-accent" />
       </div>
       <div className="flex-1 min-w-0 max-w-[85%]">
         <div className="rounded-2xl rounded-tl-md px-4 py-2.5 chat-ai-bubble">
-          <p className="text-[13px] leading-relaxed theme-text-primary break-words whitespace-pre-wrap">
-            {msg.text}
-          </p>
+          <FormattedText text={msg.text} />
         </div>
       </div>
     </div>
   )
 }
 
+function QuickReplies({ wizardStep, onSend, disabled }) {
+  const options = QUICK_REPLIES[wizardStep]
+  if (!options) return null
+
+  return (
+    <div className="flex flex-wrap gap-1.5 px-4 pb-2 animate-fadeUp">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onSend(opt.value)}
+          disabled={disabled}
+          className="px-3 py-1.5 text-[12px] font-medium rounded-full border border-accent/30 bg-accent/5 text-accent hover:bg-accent/15 hover:border-accent/50 transition-all disabled:opacity-40"
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function ChatSidebar({ onClose, initialMessage }) {
   const { messages, isTyping, isOnline, error, clearError, clearMessages } = useChatStore()
-  const { send, isInWizard, resetWizard, startTimetableImport } = useLLM()
+  const { send, isInWizard, wizardStep, resetWizard, startTimetableImport } = useLLM()
   const isMobile = useIsMobile()
   const [input, setInput] = useState(initialMessage || '')
   const [sending, setSending] = useState(false)
@@ -160,9 +231,9 @@ export default function ChatSidebar({ onClose, initialMessage }) {
     prevTypingRef.current = isTyping
   }, [messages, isTyping])
 
-  const handleSend = async () => {
-    const text = input.trim()
-    if (!text && !selectedFile) return
+  const handleSend = async (text) => {
+    const msg = text || input.trim()
+    if (!msg && !selectedFile) return
     if (sending) return
     setInput('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
@@ -172,7 +243,7 @@ export default function ChatSidebar({ onClose, initialMessage }) {
         await startTimetableImport(selectedFile)
         clearSelectedFile()
       } else {
-        await send(text)
+        await send(msg)
       }
     } finally {
       setSending(false)
@@ -220,9 +291,7 @@ export default function ChatSidebar({ onClose, initialMessage }) {
       <header className="px-4 py-3 border-b border-white/[0.06] flex-shrink-0 flex items-center justify-between chat-header">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 border border-accent/25 flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
+            <AiIcon className="w-4 h-4 text-accent" />
           </div>
           <div className="min-w-0">
             <h2 className="font-semibold text-[13px] theme-text-primary leading-tight">Kairo AI</h2>
@@ -304,9 +373,7 @@ export default function ChatSidebar({ onClose, initialMessage }) {
         {showSuggestions && (
           <div className="flex-1 flex flex-col items-center justify-center px-2">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 flex items-center justify-center mb-4">
-              <svg className="w-7 h-7 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
+              <AiIcon className="w-7 h-7 text-accent" />
             </div>
             <h3 className="text-sm font-semibold theme-text-primary mb-1">How can I help?</h3>
             <p className="text-[11px] theme-text-secondary mb-6 text-center max-w-[240px]">
@@ -333,9 +400,7 @@ export default function ChatSidebar({ onClose, initialMessage }) {
         {isTyping && (
           <div className="flex gap-2.5 mb-3">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent/20 to-accent/5 border border-accent/20 flex items-center justify-center flex-shrink-0">
-              <svg className="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
+              <AiIcon className="w-3.5 h-3.5 text-accent" />
             </div>
             <div className="rounded-2xl rounded-tl-md px-4 py-3 chat-ai-bubble">
               <TypingIndicator />
@@ -344,6 +409,9 @@ export default function ChatSidebar({ onClose, initialMessage }) {
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* Quick reply buttons */}
+      {isInWizard && !isTyping && <QuickReplies wizardStep={wizardStep} onSend={handleSend} disabled={sending} />}
 
       {/* Input area */}
       <div className={`px-3 pt-2 flex-shrink-0 border-t border-white/[0.06] ${isMobile ? 'pb-20' : 'pb-3'}`}
@@ -372,7 +440,7 @@ export default function ChatSidebar({ onClose, initialMessage }) {
           </div>
         )}
 
-        <div className="flex items-end gap-2 rounded-xl px-3 py-2 chat-input-container">
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2 chat-input-container">
           <button
             onClick={() => fileInputRef.current?.click()}
             className="h-8 w-8 rounded-lg hover:text-accent hover:bg-accent/10 transition-colors flex items-center justify-center flex-shrink-0 theme-text-secondary disabled:opacity-30"
@@ -404,7 +472,7 @@ export default function ChatSidebar({ onClose, initialMessage }) {
               color: (input.trim() || selectedFile) ? '#fff' : 'var(--theme-text-secondary)',
               transform: (input.trim() || selectedFile) ? 'scale(1)' : 'scale(0.9)',
             }}
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={sending || (!input.trim() && !selectedFile)}
             aria-label={sending ? 'Sending...' : 'Send message'}
           >
