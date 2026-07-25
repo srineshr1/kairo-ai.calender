@@ -1,29 +1,28 @@
-// Service Worker for my.calendar PWA
-// Implements caching strategies for offline support
+// Service Worker for Kairo PWA
+// Network-first for HTML so deploys (e.g. landing page) are not stuck on an old shell.
 
-const CACHE_NAME = 'my-calendar-v1';
-const RUNTIME_CACHE = 'my-calendar-runtime';
+const CACHE_NAME = 'kairo-v2'
+const RUNTIME_CACHE = 'kairo-runtime-v2'
 
-// Assets to cache immediately on install
+// Static assets only — never precache index.html (it changes every deploy)
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
-];
+  '/icons/icon.svg',
+]
 
-// Install event - precache essential assets
+// Install event - precache essential static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[SW] Precaching app shell');
-        return cache.addAll(PRECACHE_ASSETS);
+        console.log('[SW] Precaching static assets')
+        return cache.addAll(PRECACHE_ASSETS)
       })
       .then(() => self.skipWaiting())
-  );
-});
+  )
+})
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches (including my-calendar-v1 shells)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -31,135 +30,153 @@ self.addEventListener('activate', (event) => {
         cacheNames
           .filter((name) => name !== CACHE_NAME && name !== RUNTIME_CACHE)
           .map((name) => {
-            console.log('[SW] Deleting old cache:', name);
-            return caches.delete(name);
+            console.log('[SW] Deleting old cache:', name)
+            return caches.delete(name)
           })
-      );
+      )
     }).then(() => self.clients.claim())
-  );
-});
+  )
+})
 
-// Fetch event - implement stale-while-revalidate strategy
+// Fetch event
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+  const { request } = event
+  const url = new URL(request.url)
 
   // Skip non-GET requests
-  if (request.method !== 'GET') return;
+  if (request.method !== 'GET') return
 
   // Skip cross-origin requests (except fonts)
-  if (url.origin !== self.location.origin && 
+  if (url.origin !== self.location.origin &&
       !url.hostname.includes('fonts.googleapis.com') &&
       !url.hostname.includes('fonts.gstatic.com')) {
-    return;
+    return
   }
 
   // Skip API requests and Supabase (need to be online for real-time)
-  if (url.pathname.startsWith('/api') || 
+  if (url.pathname.startsWith('/api') ||
       url.hostname.includes('supabase.co')) {
-    return;
+    return
   }
 
-  // For HTML pages, use network-first strategy
-  if (request.headers.get('accept')?.includes('text/html')) {
+  // Navigations + HTML: always network-first so SPA updates ship immediately
+  const isNavigation = request.mode === 'navigate'
+  const isHtml = request.headers.get('accept')?.includes('text/html')
+  if (isNavigation || isHtml || url.pathname === '/' || url.pathname === '/index.html') {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Clone and cache the response
-          const responseClone = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
+          // Do not long-cache HTML — only use as offline fallback
+          if (response.ok) {
+            const responseClone = response.clone()
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseClone)
+            })
+          }
+          return response
         })
         .catch(() => {
-          // Fallback to cache
           return caches.match(request).then((cached) => {
-            return cached || caches.match('/');
-          });
+            return cached || caches.match('/index.html') || caches.match('/')
+          })
         })
-    );
-    return;
+    )
+    return
   }
 
-  // For other assets, use stale-while-revalidate
+  // Hashed build assets: cache-first is fine (filenames change on deploy)
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached
+        return fetch(request).then((response) => {
+          if (response.ok) {
+            const responseClone = response.clone()
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseClone)
+            })
+          }
+          return response
+        })
+      })
+    )
+    return
+  }
+
+  // Other same-origin assets: stale-while-revalidate
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request)
         .then((response) => {
-          // Cache valid responses
           if (response.ok) {
-            const responseClone = response.clone();
+            const responseClone = response.clone()
             caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
+              cache.put(request, responseClone)
+            })
           }
-          return response;
+          return response
         })
         .catch(() => {
-          // Network failed, rely on cache
-          console.log('[SW] Network failed, using cache for:', request.url);
-        });
+          console.log('[SW] Network failed, using cache for:', request.url)
+          return cached
+        })
 
-      // Return cached version immediately, fetch in background
-      return cached || fetchPromise;
+      return cached || fetchPromise
     })
-  );
-});
+  )
+})
 
 // Handle messages from clients
 self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') {
-    self.skipWaiting();
+    self.skipWaiting()
   }
-});
+})
 
 // Background sync for offline actions (future enhancement)
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-events') {
-    console.log('[SW] Background sync triggered');
-    // TODO: Sync offline event changes
+    console.log('[SW] Background sync triggered')
   }
-});
+})
 
 // Push notifications (future enhancement)
 self.addEventListener('push', (event) => {
-  if (!event.data) return;
+  if (!event.data) return
 
-  const data = event.data.json();
+  const data = event.data.json()
   const options = {
     body: data.body || 'You have a new notification',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     vibrate: [100, 50, 100],
     data: {
       url: data.url || '/',
     },
     actions: data.actions || [],
-  };
+  }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'my.calendar', options)
-  );
-});
+    self.registration.showNotification(data.title || 'kairo', options)
+  )
+})
 
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
+  event.notification.close()
 
-  const url = event.notification.data?.url || '/';
+  const url = event.notification.data?.url || '/'
 
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((windowClients) => {
-      // Focus existing window or open new one
       for (const client of windowClients) {
         if (client.url === url && 'focus' in client) {
-          return client.focus();
+          return client.focus()
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow(url);
+        return clients.openWindow(url)
       }
     })
-  );
-});
+  )
+})

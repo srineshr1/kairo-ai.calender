@@ -13,7 +13,6 @@ import ProfileModal from './components/Modal/ProfileModal'
 import WhatsAppSettings from './components/WhatsApp/WhatsAppSettings'
 import WhatsAppToast from './components/WhatsAppToast'
 import ToastContainer from './components/ToastContainer'
-import ProtectedRoute from './components/ProtectedRoute'
 import OfflineIndicator from './components/OfflineIndicator'
 import MobileNav from './components/MobileNav'
 import MobileDrawer from './components/MobileDrawer'
@@ -33,7 +32,9 @@ const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
+const Landing = lazy(() => import('./pages/Landing'))
 import getSupabaseClient from './lib/supabase'
+import { LoadingSkeleton } from './components/LoadingSpinner'
 
 function CalendarApp() {
   const getEffectiveBlurLevel = useSettingsStore((state) => state.getEffectiveBlurLevel)
@@ -514,9 +515,30 @@ function CalendarApp() {
   )
 }
 
-export default function App() {
-  const { authEnabled } = useAuth()
+/** Root: landing for guests, calendar when signed in (or when auth is off in dev). */
+function RootRoute() {
+  const { user, loading, authEnabled } = useAuth()
 
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-6 md:p-8 bg-light-bg dark:bg-sidebar-deep">
+        <div className="w-full max-w-none">
+          <div className="mb-6 h-8 w-48 bg-light-card dark:bg-gray-800 rounded animate-pulse" />
+          <LoadingSkeleton rows={14} />
+        </div>
+      </div>
+    )
+  }
+
+  // Dev mode without auth, or authenticated user → full calendar
+  if (!authEnabled || user) {
+    return <CalendarApp />
+  }
+
+  return <Landing />
+}
+
+export default function App() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-screen bg-light-bg dark:bg-sidebar">Loading...</div>}>
       <Routes>
@@ -525,17 +547,10 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        
-        {/* Protected routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <CalendarApp />
-            </ProtectedRoute>
-          }
-        />
-        
+
+        {/* Landing for guests; calendar when signed in */}
+        <Route path="/" element={<RootRoute />} />
+
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

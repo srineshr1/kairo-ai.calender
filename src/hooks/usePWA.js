@@ -76,39 +76,39 @@ export function usePWA() {
       return
     }
 
-    const registerSW = async () => {
+    // SW registration + auto-update lives in main.jsx so landing guests get it too.
+    // Here we only track registration state for install/update UI.
+    const trackSW = async () => {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/',
-        })
-        
-        setSwRegistration(registration)
-        console.log('[PWA] Service Worker registered:', registration.scope)
+        const registration =
+          (await navigator.serviceWorker.getRegistration('/')) ||
+          (await navigator.serviceWorker.register('/sw.js', {
+            scope: '/',
+            updateViaCache: 'none',
+          }))
 
-        // Check for updates
+        setSwRegistration(registration)
+        console.log('[PWA] Service Worker ready:', registration.scope)
+
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing
-          
           newWorker?.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New version available
               setUpdateAvailable(true)
               console.log('[PWA] New version available')
             }
           })
         })
 
-        // Check for updates periodically (every hour)
         setInterval(() => {
           registration.update()
         }, 60 * 60 * 1000)
-
       } catch (error) {
-        console.error('[PWA] Service Worker registration failed:', error)
+        console.error('[PWA] Service Worker tracking failed:', error)
       }
     }
 
-    registerSW()
+    trackSW()
   }, [])
 
   // Trigger install prompt

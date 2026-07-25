@@ -47,8 +47,17 @@ export default function Login() {
     <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-sidebar-deep' : 'bg-gray-50'} px-4`}>
       <div className={`max-w-md w-full space-y-8 p-8 rounded-lg ${isDark ? 'bg-[#1a1a2e]' : 'bg-white'} shadow-lg`}>
         <div>
+          <Link
+            to="/"
+            className={`flex items-center justify-center gap-2 mb-6 transition-opacity hover:opacity-80 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}
+          >
+            <img src="/icons/icon.svg" alt="" className="w-8 h-8 rounded-lg" width={32} height={32} />
+            <span className="font-display text-xl tracking-tight">kairo</span>
+          </Link>
           <h2 className={`text-center text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Sign in to AI Calendar
+            Sign in to Kairo
           </h2>
           <p className={`mt-2 text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Or{' '}

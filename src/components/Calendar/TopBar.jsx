@@ -67,7 +67,7 @@ export default function TopBar({
   const handleSignOut = async () => {
     try {
       await signOut()
-      navigate('/login')
+      navigate('/')
     } catch (error) {
       console.error('Sign out error:', error)
     }

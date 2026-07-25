@@ -24,9 +24,9 @@ export default function ProtectedRoute({ children }) {
     return children
   }
 
-  // If auth is enabled but user is not logged in, redirect to login
+  // If auth is enabled but user is not logged in, redirect to landing
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />
+    return <Navigate to="/" state={{ from: location }} replace />
   }
 
   // User is authenticated, render the protected content
